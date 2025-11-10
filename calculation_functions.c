@@ -62,75 +62,50 @@ void SDL_RenderFillCircle(SDL_Renderer* renderer, int centerX, int centerY, int 
 
 // draw a distance scale bar on the sreen
 void drawScaleBar(SDL_Renderer* renderer, double meters_per_pixel, int window_width, int window_height) {
-    const int BAR_HEIGHT = 3;
-    const int MARGIN = 20;
-    const int BAR_WIDTH_PIXELS = 150;  // Fixed pixel width
+    const int BAR_HEIGHT = 3, MARGIN = 20, BAR_WIDTH_PIXELS = 150;
     
-    // calculate what distance this represents
     double distance_meters = BAR_WIDTH_PIXELS * meters_per_pixel;
     
-    // round to nice value and format text
-    double scale_value;
-    char scale_text[50];
+    // Determine magnitude and round to nice value
+    double magnitude = pow(10.0, floor(log10(distance_meters)));
+    double scale_value = round(distance_meters / magnitude) * magnitude;
     
-    if (distance_meters >= 1000000) {
-        scale_value = distance_meters / 1000.0;
-        if (scale_value >= 1000) {
-            scale_value = round(scale_value / 1000.0) * 1000.0;
-        } else if (scale_value >= 100) {
-            scale_value = round(scale_value / 100.0) * 100.0;
-        } else if (scale_value >= 10) {
-            scale_value = round(scale_value / 10.0) * 10.0;
-        } else {
-            scale_value = round(scale_value);
-        }
-        sprintf(scale_text, "%.0f km", scale_value);
-    } else {
-        scale_value = distance_meters;
-        if (scale_value >= 100) {
-            scale_value = round(scale_value / 100.0) * 100.0;
-        } else if (scale_value >= 10) {
-            scale_value = round(scale_value / 10.0) * 10.0;
-        } else {
-            scale_value = round(scale_value);
-        }
-        sprintf(scale_text, "%.0f m", scale_value);
+    // Format text based on scale
+    char scale_text[50];
+    sprintf(scale_text, distance_meters >= 1000000 ? "%.0f km" : "%.0f m", 
+            distance_meters >= 1000000 ? scale_value / 1000.0 : scale_value);
+    
+    // Draw scale bar
+    int bar_x = MARGIN, bar_y = window_height - MARGIN - BAR_HEIGHT;
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    
+    SDL_FRect rects[3] = {
+        {bar_x, bar_y, BAR_WIDTH_PIXELS, BAR_HEIGHT},              // main bar
+        {bar_x, bar_y - 3, 2, BAR_HEIGHT + 6},                     // left cap
+        {bar_x + BAR_WIDTH_PIXELS - 2, bar_y - 3, 2, BAR_HEIGHT + 6}  // right cap
+    };
+    
+    for (int i = 0; i < 3; i++) {
+        SDL_RenderFillRect(renderer, &rects[i]);
     }
     
-    // draw the scale bar
-    int bar_x = MARGIN;
-    int bar_y = window_height - MARGIN - BAR_HEIGHT;
-    
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    SDL_FRect bar_rect = {bar_x, bar_y, BAR_WIDTH_PIXELS, BAR_HEIGHT};
-    SDL_RenderFillRect(renderer, &bar_rect);
-    SDL_FRect left_cap = {bar_x, bar_y - 3, 2, BAR_HEIGHT + 6};
-    SDL_FRect right_cap = {bar_x + BAR_WIDTH_PIXELS - 2, bar_y - 3, 2, BAR_HEIGHT + 6};
-    SDL_RenderFillRect(renderer, &left_cap);
-    SDL_RenderFillRect(renderer, &right_cap);
-    
-    // render the text
+    // Render text
     if (g_font) {
-        SDL_Color white = {255, 255, 255, 255};
-        
-        // SDL3 requires length parameter (0 for null-terminated strings)
-        SDL_Surface* text_surface = TTF_RenderText_Blended(g_font, scale_text, 0, white);
-        
+        SDL_Surface* text_surface = TTF_RenderText_Blended(g_font, scale_text, 0, 
+                                                           (SDL_Color){255, 255, 255, 255});
         if (text_surface) {
             SDL_Texture* text_texture = SDL_CreateTextureFromSurface(renderer, text_surface);
-            
             if (text_texture) {
-                float text_w = text_surface->w;
-                float text_h = text_surface->h;
-                SDL_FRect text_rect = {bar_x, bar_y - text_h - 5, text_w, text_h};
+                SDL_FRect text_rect = {bar_x, bar_y - text_surface->h - 5, 
+                                      text_surface->w, text_surface->h};
                 SDL_RenderTexture(renderer, text_texture, NULL, &text_rect);
                 SDL_DestroyTexture(text_texture);
             }
-            
             SDL_DestroySurface(text_surface);
         }
     }
 }
+
 
 // calculates the size (in pixels) that the planet should appear on the screen based on its mass
 int calculateVisualRadius(double mass) {
@@ -165,7 +140,7 @@ void drawSpeedControl(SDL_Renderer* renderer, speed_control_t* control, double m
     };
     SDL_RenderFillRect(renderer, &bg_rect);
     
-    // boarder
+    // border
     SDL_SetRenderDrawColor(renderer, 200, 200, 200, 255);
     SDL_RenderRect(renderer, &bg_rect);
     

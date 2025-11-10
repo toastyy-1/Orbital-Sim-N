@@ -59,12 +59,12 @@ int main(int argc, char* argv[]) {
     bool sim_running = true;
 
     // initial properties of the bodies
-    body1.mass = 5000000000000.0f;
+    body1.mass = 50000000000000.0f;
     body2.mass = 500000000000.0f;
-    body1.pos_y = 25000.0f;
+    body1.pos_y = 0.0f;
     body2.pos_y = -25000.0f;
-    body1.vel_x = 0.01f;
-    body2.vel_x = -0.01f;
+    body1.vel_x = 0.0f;
+    body2.vel_x = -0.05f;
 
     body1.radius = calculateVisualRadius(body1.mass);
     body2.radius = calculateVisualRadius(body2.mass);
@@ -106,9 +106,9 @@ int main(int argc, char* argv[]) {
                     
                     // scroll up increases speed, scroll down decreases
                     if (event.wheel.y > 0) {
-                        TIME_STEP *= 1.2; // Increase by 20%
+                        TIME_STEP *= 1.05; // Increase by 20%
                     } else if (event.wheel.y < 0) {
-                        TIME_STEP /= 1.2; // Decrease by 20%
+                        TIME_STEP /= 1.05; // Decrease by 20%
                     }
                 }
             }            
