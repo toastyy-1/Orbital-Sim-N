@@ -5,7 +5,8 @@
 #include "calculation_functions.h"
 // at the end of each sim loop, this function should be run to calculate the changes in
 // the force values based on other parameters. for example, using F to find a based on m.
-void calculateForces(body_properties_t *b, body_properties_t b2) {
+// b is the body that has the force applied to it, whilst b2 is the body applying force to b
+void calculateForce(body_properties_t *b, body_properties_t b2) {
     // calculate the distance between the two bodies
     double delta_pos_x = b2.pos_x - b->pos_x;
     double delta_pos_y = b2.pos_y - b->pos_y;
@@ -14,19 +15,20 @@ void calculateForces(body_properties_t *b, body_properties_t b2) {
 
     // calculate the force that b2 applies on b due to gravitation (F = (GMm) / r)
     double total_force = (G * b->mass * b2.mass) / (r * r);
-    b->force_x = total_force * (delta_pos_x / r);
-    b->force_y = total_force * (delta_pos_y / r);
-
-    // calculate the acceleration from the force on the object
-    b->acc_x = b->force_x / b->mass;
-    b->acc_y = b->force_y / b->mass;
+    b->force_x += total_force * (delta_pos_x / r);
+    b->force_y += total_force * (delta_pos_y / r);
 }
 
 // this calculates the changes of velocity and position based on the force values from before
 void updateMotion(body_properties_t *b, double dt) {
+    // calculate the acceleration from the force on the object
+    b->acc_x = b->force_x / b->mass;
+    b->acc_y = b->force_y / b->mass;
+
     // update the velocity
     b->vel_x = b->vel_x + b->acc_x * dt;
     b->vel_y = b->vel_y + b->acc_y * dt;
+    b->vel   = sqrt(b->vel_x * b->vel_x + b->vel_y * b->vel_y);
 
     // update the position using the new velocity
     b->pos_x = b->pos_x + b->vel_x * dt;
@@ -35,8 +37,8 @@ void updateMotion(body_properties_t *b, double dt) {
 
 // transforms spacial coordinates (for example, in meters) to pixel coordinates
 void transformCoordinates(body_properties_t *b) {
-    b->pixel_coordinates_x = ORIGIN_X + (int)(b->pos_x / METERS_PER_PIXEL);
-    b->pixel_coordinates_y = ORIGIN_Y + (int)(b->pos_y / METERS_PER_PIXEL);
+    b->pixel_coordinates_x = ORIGIN_X + (int)(b->pos_x / meters_per_pixel);
+    b->pixel_coordinates_y = ORIGIN_Y - (int)(b->pos_y / meters_per_pixel); // this is negative because the SDL origin is in the top left, so positive y is 'down'
 }
 
 // draw a circle in SDL
@@ -101,10 +103,9 @@ void drawScaleBar(SDL_Renderer* renderer, double meters_per_pixel, int window_wi
 
 
 // calculates the size (in pixels) that the planet should appear on the screen based on its mass
-int calculateVisualRadius(double mass) {
-    const float scaling_coeff = 0.0351; // coefficient that came from real math I promise
-    float radius_meters =  scaling_coeff * pow(mass, 1.0f/3.0f);
-    return (int)(radius_meters / METERS_PER_PIXEL);
+
+int calculateVisualRadius(body_properties_t body) {
+    return (int)(body.radius / meters_per_pixel);
 }
 
 
@@ -155,27 +156,18 @@ void drawSpeedControl(SDL_Renderer* renderer, speed_control_t* control, double m
 }
 
 // the event handling code... checks if events are happening for input and does a task based on that input
-void runEventCheck(SDL_Event* event, bool* loop_running_condition, speed_control_t* speed_control, double* TIME_STEP) {
+void runEventCheck(SDL_Event* event, bool* loop_running_condition, speed_control_t* speed_control, double* TIME_STEP, double* meters_per_pixel) {
     while (SDL_PollEvent(event)) {
+        // check if x button is pressed to quit
         if (event->type == SDL_EVENT_QUIT) {
             *loop_running_condition = false;
         }
-        
-        else if (event->type == SDL_EVENT_MOUSE_MOTION) {
-            int mouse_x = (int)event->motion.x;
-            int mouse_y = (int)event->motion.y;
-            
-            speed_control->is_hovered = isMouseInRect(
-                mouse_x, mouse_y,
-                speed_control->x, speed_control->y,
-                speed_control->width, speed_control->height
-            );
-        }
-        
+        // check if scroll
         else if (event->type == SDL_EVENT_MOUSE_WHEEL) {
             int mouse_x = (int)event->wheel.mouse_x;
             int mouse_y = (int)event->wheel.mouse_y;
             
+            // if its in the speed change box
             if (isMouseInRect(mouse_x, mouse_y,
                 speed_control->x, speed_control->y,
                 speed_control->width, speed_control->height)) {
@@ -186,7 +178,15 @@ void runEventCheck(SDL_Event* event, bool* loop_running_condition, speed_control
                     *TIME_STEP /= 1.05;
                 }
             }
+            else {
+                if (event->wheel.y > 0) {
+                    *meters_per_pixel *= 1.05;
+                } else if (event->wheel.y < 0) {
+                    *meters_per_pixel /= 1.05;
+                }
+            }
         }
+
     }
 }
 
@@ -209,3 +209,28 @@ void drawStatsBox(SDL_Renderer* renderer, body_properties_t b1, body_properties_
     SDL_DestroyTexture(text_texture);
     SDL_DestroySurface(text_surface);
 }
+
+
+// function to add a new body to the system
+void addOrbitalBody(double mass, double x_pos, double y_pos, double x_vel, double y_vel) {
+    extern int num_bodies;
+
+    // reallocate memory for the new body
+    global_bodies  = (body_properties_t *)realloc(global_bodies, (num_bodies + 1) * sizeof(body_properties_t));
+
+    // initialize the new body at index num_bodies
+    global_bodies[num_bodies].mass = mass;
+    global_bodies[num_bodies].pos_x = x_pos;
+    global_bodies[num_bodies].pos_y = y_pos;
+    global_bodies[num_bodies].vel_x = x_vel;
+    global_bodies[num_bodies].vel_y = y_vel;
+    
+    // calculate the radius based on mass (kind of a random estimate)
+    const float scaling_coeff = 0.0351; // coefficient that came from real math I promise
+    global_bodies[num_bodies].radius = scaling_coeff * pow(mass, 1.0f/3.0f);
+
+    // add one count to the body
+    num_bodies++;
+}
+
+// function to remove a body from the system

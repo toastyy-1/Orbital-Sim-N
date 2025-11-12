@@ -26,21 +26,18 @@ speed_control_t speed_control = {10, 10, 150, 40, false};
 double speed_multiplier = 1.0; // multiplier for TIME_STEP
 
 // SDL window sizing numbers
-const int WINDOW_SIZE_X         = 1500;
-const int WINDOW_SIZE_Y         = 1500;
+const int WINDOW_SIZE_X         = 1000;
+const int WINDOW_SIZE_Y         = 1000;
 const int ORIGIN_X              = WINDOW_SIZE_X / 2;
 const int ORIGIN_Y              = WINDOW_SIZE_Y / 2;
-const double METERS_PER_PIXEL   = 100; // 1m in space will equal x number of pixels on screen
+double meters_per_pixel   = 100; // 1m in space will equal x number of pixels on screen
 const int FONT_SIZE             = WINDOW_SIZE_Y / (WINDOW_SIZE_X * 0.05);
 
 TTF_Font* g_font = NULL;
 
 // holds the information on the bodies
-int num_bodies = 2;
+int num_bodies = 0;
 body_properties_t *global_bodies = NULL;
-
-body_properties_t body1 = {0};
-body_properties_t body2 = {0};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // MAIN
@@ -61,27 +58,19 @@ int main(int argc, char* argv[]) {
     // set to false to stop the sim program
     bool sim_running = true;
 
-    global_bodies = (body_properties_t *)malloc(num_bodies * sizeof(body_properties_t));
-
-    // initial properties of the bodies
-    global_bodies[0].mass = 50000000000000.0f;
-    global_bodies[0].pos_y = 0.0f;
-    global_bodies[0].vel_x = 0.0f;
-    global_bodies[0].radius = calculateVisualRadius(global_bodies[0].mass);
-
-    global_bodies[1].mass = 500000000000.0f;
-    global_bodies[1].pos_y = -25000.0f;
-    global_bodies[1].vel_x = -0.3f;
-    global_bodies[1].radius = calculateVisualRadius(global_bodies[1].mass);
-
     ////////////////////////////////////////////////////////
     // simulation loop                                    //
     ////////////////////////////////////////////////////////
 
+    addOrbitalBody(1e12, -2.5e4, 0, 0, -0.3);
+    addOrbitalBody(1e14, 0, 0, 0, 0);
+
     while (sim_running) {
         // checks inputs into the window
         SDL_Event event;
-        runEventCheck(&event, &sim_running, &speed_control, &TIME_STEP);
+        runEventCheck(&event, &sim_running, &speed_control, &TIME_STEP, &meters_per_pixel);
+
+        // runs a check to see what the zoom value should be to automatically asjust
 
         // clears previous frame from the screen
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
@@ -95,31 +84,36 @@ int main(int argc, char* argv[]) {
         ////////////////////////////////////////////////////
 
         // calculate forces between all body pairs
-        for (int i = 0; i < num_bodies; i++) {
-            for (int j = 0; j < num_bodies; j++) {
-                if (i != j) {
-                    calculateForces(&global_bodies[i], global_bodies[j]);
+        if (global_bodies != NULL) {
+            for (int i = 0; i < num_bodies; i++) {
+                global_bodies[i].force_x = 0;
+                global_bodies[i].force_y = 0;
+                for (int j = 0; j < num_bodies; j++) {
+                    if (i != j) {
+                        calculateForce(&global_bodies[i], global_bodies[j]);
+                    }
                 }
             }
+            
+            // update the motion for each body and draw
+            for (int i = 0; i < num_bodies; i++) {
+                // updates the kinematic properties of each body (velocity, accelertion, position, etc)
+                updateMotion(&global_bodies[i], TIME_STEP);
+                // transform real-space coordinate to pixel coordinates on screen (scaling)
+                transformCoordinates(&global_bodies[i]);
+                // draw bodies
+                SDL_RenderFillCircle(renderer, global_bodies[i].pixel_coordinates_x,
+                                global_bodies[i].pixel_coordinates_y, 
+                                calculateVisualRadius(global_bodies[i]));
+            }
         }
-        
-        // update the motion for each body and draw
-        for (int i = 0; i < num_bodies; i++) {
-            updateMotion(&global_bodies[i], TIME_STEP);
-            transformCoordinates(&global_bodies[i]);
-            SDL_RenderFillCircle(renderer, global_bodies[i].pixel_coordinates_x,
-                            global_bodies[i].pixel_coordinates_y, 
-                            global_bodies[i].radius);
-    }
+
 
         // draw scale reference bar
-        drawScaleBar(renderer, METERS_PER_PIXEL, WINDOW_SIZE_X, WINDOW_SIZE_Y);
+        drawScaleBar(renderer, meters_per_pixel, WINDOW_SIZE_X, WINDOW_SIZE_Y);
 
         // draw speed control box
         drawSpeedControl(renderer, &speed_control, TIME_STEP);
-
-        // draw the stats info box
-        drawStatsBox(renderer, global_bodies[0], global_bodies[1]);
 
         // present the renderer to the screen
         SDL_RenderPresent(renderer);
