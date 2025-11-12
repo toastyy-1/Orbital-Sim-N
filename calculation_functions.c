@@ -105,7 +105,7 @@ void drawScaleBar(SDL_Renderer* renderer, double meters_per_pixel, int window_wi
 // calculates the size (in pixels) that the planet should appear on the screen based on its mass
 
 int calculateVisualRadius(body_properties_t body) {
-    return (int)(body.radius / meters_per_pixel);
+    int r = (int)(body.radius / meters_per_pixel);
 }
 
 
@@ -226,8 +226,7 @@ void addOrbitalBody(double mass, double x_pos, double y_pos, double x_vel, doubl
     global_bodies[num_bodies].vel_y = y_vel;
     
     // calculate the radius based on mass (kind of a random estimate)
-    const float scaling_coeff = 0.0351; // coefficient that came from real math I promise
-    global_bodies[num_bodies].radius = scaling_coeff * pow(mass, 1.0f/3.0f);
+    global_bodies[num_bodies].radius = pow(mass, 0.279f);
 
     // add one count to the body
     num_bodies++;

@@ -30,7 +30,7 @@ const int WINDOW_SIZE_X         = 1000;
 const int WINDOW_SIZE_Y         = 1000;
 const int ORIGIN_X              = WINDOW_SIZE_X / 2;
 const int ORIGIN_Y              = WINDOW_SIZE_Y / 2;
-double meters_per_pixel   = 100; // 1m in space will equal x number of pixels on screen
+double meters_per_pixel   = 100000; // 1m in space will equal x number of pixels on screen
 const int FONT_SIZE             = WINDOW_SIZE_Y / (WINDOW_SIZE_X * 0.05);
 
 TTF_Font* g_font = NULL;
@@ -62,8 +62,11 @@ int main(int argc, char* argv[]) {
     // simulation loop                                    //
     ////////////////////////////////////////////////////////
 
-    addOrbitalBody(1e12, -2.5e4, 0, 0, -0.3);
-    addOrbitalBody(1e14, 0, 0, 0, 0);
+    // Earth at origin
+    addOrbitalBody(5.972e24, 0, 0, 0, 0);
+
+    // Moon orbiting Earth
+    addOrbitalBody(7.342e22, 3.844e8, 0, 0, 1022);
 
     while (sim_running) {
         // checks inputs into the window
