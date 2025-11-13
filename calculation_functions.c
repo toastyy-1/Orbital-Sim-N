@@ -87,8 +87,10 @@ void SDL_WriteText(SDL_Renderer* renderer, TTF_Font* font, const char* text, flo
 
 // draw a distance scale bar on the sreen
 void drawScaleBar(SDL_Renderer* renderer, double meters_per_pixel, int window_width, int window_height) {
-    const int BAR_HEIGHT = 3, MARGIN = 20, BAR_WIDTH_PIXELS = 150;
-    
+    const int BAR_HEIGHT = window_height * 0.003;
+    const int MARGIN = window_width * 0.02;
+    const int BAR_WIDTH_PIXELS = window_width * 0.15;
+
     double distance_meters = BAR_WIDTH_PIXELS * meters_per_pixel;
     
     // determine magnitude and round to nice value
@@ -101,7 +103,8 @@ void drawScaleBar(SDL_Renderer* renderer, double meters_per_pixel, int window_wi
             distance_meters >= 1000000 ? scale_value / 1000.0 : scale_value);
     
     // draw scale bar
-    int bar_x = MARGIN, bar_y = window_height - MARGIN - BAR_HEIGHT;
+    int bar_x = MARGIN; 
+    int bar_y = window_height - MARGIN - BAR_HEIGHT;
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     
     SDL_FRect rects[3] = {
@@ -132,23 +135,25 @@ bool isMouseInRect(int mouse_x, int mouse_y, int rect_x, int rect_y, int rect_w,
 }
 
 // the speed control box
-void drawSpeedControl(SDL_Renderer* renderer, speed_control_t* control, double multiplier) {
+void drawSpeedControl(SDL_Renderer* renderer, speed_control_t* control, double multiplier, window_params_t wp) {
     // background color
     SDL_SetRenderDrawColor(renderer, 80, 80, 120, 255);
-    
+
     SDL_FRect bg_rect = {
-        (float)control->x, 
-        (float)control->y, 
-        (float)control->width, 
+        (float)control->x,
+        (float)control->y,
+        (float)control->width,
         (float)control->height
     };
     SDL_RenderFillRect(renderer, &bg_rect);
-    
+
     // text showing current speed
     char speed_text[32];
     snprintf(speed_text, sizeof(speed_text), "Speed: %.2f s/frame", multiplier);
-    
-    SDL_WriteText(renderer, g_font, speed_text, control->x + 10, control->y + 10, text_color);
+
+    int padding_x = wp.window_size_x * 0.01;
+    int padding_y = wp.window_size_y * 0.01;
+    SDL_WriteText(renderer, g_font, speed_text, control->x + padding_x, control->y + padding_y, text_color);
 
 }
 
@@ -194,20 +199,39 @@ void runEventCheck(SDL_Event* event, bool* loop_running_condition, speed_control
                 }
             }
         }
+        // check if window is resized
+        else if (event->type == SDL_EVENT_WINDOW_RESIZED) {
+            wp->window_size_x = event->window.data1;
+            wp->window_size_y = event->window.data2;
+            wp->screen_origin_x = wp->window_size_x / 2;
+            wp->screen_origin_y = wp->window_size_y / 2;
+
+            // update font size proportionally
+            wp->font_size = wp->window_size_x / 75;
+            if (g_font) TTF_CloseFont(g_font);
+            g_font = TTF_OpenFont("CascadiaCode.ttf", wp->font_size);
+
+            // update speed control box position and size
+            speed_control->width = wp->window_size_x * 0.15;
+            speed_control->height = wp->window_size_y * 0.04;
+        }
 
     }
 }
 
 // the stats box that shows stats yay
 void drawStatsBox(SDL_Renderer* renderer, body_properties_t* bodies, int num_bodies, double sim_time, window_params_t wp) {
+    int margin_x = wp.window_size_x * 0.02;
+    int start_y = wp.window_size_y * 0.07;
+    int line_height = wp.window_size_y * 0.02;
+
     // all calculations for things to go inside the box:
     for (int i = 0; i < num_bodies; i++) {
         char vel_text[32];
         snprintf(vel_text, sizeof(vel_text), "Vel of Body %d: %.1f", i, bodies[i].vel);
 
         // render text
-
-        SDL_WriteText(renderer, g_font, vel_text, 20, 70+i*20, text_color);
+        SDL_WriteText(renderer, g_font, vel_text, margin_x, start_y + i * line_height, text_color);
     }
 
     // show sim time in the top corner
@@ -224,7 +248,7 @@ void drawStatsBox(SDL_Renderer* renderer, body_properties_t* bodies, int num_bod
     else {
         snprintf(time, sizeof(time), "Sim time: %.1f days", sim_time/86400); // sim time in days
     }
-    SDL_WriteText(renderer, g_font, time, wp.window_size_x - (wp.window_size_x * 0.2), 15, text_color);
+    SDL_WriteText(renderer, g_font, time, wp.window_size_x * 0.8, wp.window_size_y * 0.015, text_color);
 }
 
 
