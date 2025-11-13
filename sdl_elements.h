@@ -21,7 +21,7 @@ void SDL_RenderFillCircle(SDL_Renderer* renderer, int centerX, int centerY, int 
 void drawScaleBar(SDL_Renderer* renderer, double meters_per_pixel, int window_width, int window_height);
 bool isMouseInRect(int mouse_x, int mouse_y, int rect_x, int rect_y, int rect_w, int rect_h);
 void drawSpeedControl(SDL_Renderer* renderer, speed_control_t* control, double multiplier, window_params_t wp);
-void runEventCheck(SDL_Event* event, bool* loop_running_condition, speed_control_t* speed_control, window_params_t* wp, bool* sim_running);
+void runEventCheck(SDL_Event* event, bool* loop_running_condition, speed_control_t* speed_control, window_params_t* wp, bool* sim_running, body_properties_t** bodies, int* num_bodies);
 void drawStatsBox(SDL_Renderer* renderer, body_properties_t* bodies, int num_bodies, double sim_time, window_params_t wp);
 void SDL_WriteText(SDL_Renderer* renderer, TTF_Font* font, const char* text, float x, float y, SDL_Color color);
 

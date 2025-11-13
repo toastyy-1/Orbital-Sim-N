@@ -1,4 +1,5 @@
 #include "sdl_elements.h"
+#include "calculation_functions.h"
 
 SDL_Color text_color = {255, 255, 255, 255};
 
@@ -110,11 +111,23 @@ void drawSpeedControl(SDL_Renderer* renderer, speed_control_t* control, double m
 }
 
 // the event handling code... checks if events are happening for input and does a task based on that input
-void runEventCheck(SDL_Event* event, bool* loop_running_condition, speed_control_t* speed_control, window_params_t* wp, bool* sim_running) {
+void runEventCheck(SDL_Event* event, bool* loop_running_condition, speed_control_t* speed_control, window_params_t* wp, bool* sim_running, body_properties_t** bodies, int* num_bodies) {
     while (SDL_PollEvent(event)) {
         // check if x button is pressed to quit
         if (event->type == SDL_EVENT_QUIT) {
             *loop_running_condition = false;
+        }
+        // check if mouse button is clicked
+        else if (event->type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
+            if (event->button.button == SDL_BUTTON_LEFT) {
+                // convert pixel coordinates to world coordinates
+                double world_x = (event->button.x - wp->screen_origin_x) * wp->meters_per_pixel;
+                double world_y = -(event->button.y - wp->screen_origin_y) * wp->meters_per_pixel;
+
+                // add a new body at the clicked location
+                double default_mass = 1e25;  // default mass for new bodies
+                addOrbitalBody(bodies, num_bodies, default_mass, world_x, world_y, 0.0, 0.0);
+            }
         }
         // check if scroll
         else if (event->type == SDL_EVENT_MOUSE_WHEEL) {

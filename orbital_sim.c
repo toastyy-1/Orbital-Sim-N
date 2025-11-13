@@ -73,23 +73,10 @@ int main(int argc, char* argv[]) {
     // simulation loop                                    //
     ////////////////////////////////////////////////////////
 
-    double jupiterMass = 1.898e27;   // Jupiter
-    double ioMass = 8.93e22;         // Io (most volcanically active body)
-    double ioRadius = 4.217e8;       // Io's orbital radius
-    double ioVel = 17334.0;  // m/s
-    double europaMass = 4.8e22;      // Europa
-    double europaRadius = 6.709e8;   // Europa's orbital radius
-    double europaVel = 13740.0;  // m/s
-    
-    addOrbitalBody(&global_bodies, &num_bodies, jupiterMass, 0.0, 0.0, 0.0, 0.0);
-    addOrbitalBody(&global_bodies, &num_bodies, ioMass, ioRadius, 0.0, 0.0, ioVel);
-    addOrbitalBody(&global_bodies, &num_bodies, europaMass, 0.0, europaRadius, -europaVel, 0.0);
-    addOrbitalBody(&global_bodies, &num_bodies, 1e25, 1e8, 1e8, 27334, 0);
-
     while (window_open) {
         // checks inputs into the window
         SDL_Event event;
-        runEventCheck(&event, &window_open, &speed_control, &wp, &sim_running);
+        runEventCheck(&event, &window_open, &speed_control, &wp, &sim_running, &global_bodies, &num_bodies);
 
         // clears previous frame from the screen
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
@@ -143,7 +130,7 @@ int main(int argc, char* argv[]) {
         if (global_bodies != NULL) drawStatsBox(renderer, global_bodies, num_bodies, sim_time, wp);
 
         // help text at the bottom
-        SDL_WriteText(renderer, g_font, "Press space to pause/resume", wp.window_size_x * 0.6, wp.window_size_y - wp.window_size_x * 0.02 - wp.font_size, white_text);
+        SDL_WriteText(renderer, g_font, "Space: pause/resume | Left Click: add body", wp.window_size_x * 0.4, wp.window_size_y - wp.window_size_x * 0.02 - wp.font_size, white_text);
 
         // present the renderer to the screen
         SDL_RenderPresent(renderer);
