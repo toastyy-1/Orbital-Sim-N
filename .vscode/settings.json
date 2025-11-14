@@ -13,7 +13,8 @@
         "sdl.h": "c",
         "sdl_elements.h": "c",
         "config.h": "c",
-        "math.h": "c"
+        "math.h": "c",
+        "stdbool.h": "c"
     },
     "C_Cpp.default.compilerPath": "C:/msys64/mingw64/bin/g++.exe"
 }

@@ -49,8 +49,9 @@ int main(int argc, char* argv[]) {
     SDL_Color white_text = {255, 255, 255, 255};
 
     // holds the information on the bodies
-    int num_bodies = 0;
+    int num_bodies;
     body_properties_t* global_bodies = NULL;
+    if (global_bodies == NULL) num_bodies = 0;
 
     // initialize SDL3
     SDL_Init(SDL_INIT_VIDEO);
@@ -76,7 +77,7 @@ int main(int argc, char* argv[]) {
     while (window_open) {
         // checks inputs into the window
         SDL_Event event;
-        runEventCheck(&event, &window_open, &speed_control, &wp, &sim_running, &global_bodies, &num_bodies);
+        runEventCheck(&event, &window_open, &speed_control, &wp, &sim_running, &global_bodies, &num_bodies, &sim_time);
 
         // clears previous frame from the screen
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
@@ -120,6 +121,9 @@ int main(int argc, char* argv[]) {
                             calculateVisualRadius(global_bodies[i], wp));
         }
 
+        ////////////////////////////////////////////////////
+        // UI ELEMENTS                                    //
+        ////////////////////////////////////////////////////
         // draw scale reference bar
         drawScaleBar(renderer, wp.meters_per_pixel, wp.window_size_x, wp.window_size_y);
 
@@ -130,7 +134,10 @@ int main(int argc, char* argv[]) {
         if (global_bodies != NULL) drawStatsBox(renderer, global_bodies, num_bodies, sim_time, wp);
 
         // help text at the bottom
-        SDL_WriteText(renderer, g_font, "Space: pause/resume | Left Click: add body", wp.window_size_x * 0.4, wp.window_size_y - wp.window_size_x * 0.02 - wp.font_size, white_text);
+        SDL_WriteText(renderer, g_font, "Space: pause/resume | Left Click: add body | R: Reset", wp.window_size_x * 0.4, wp.window_size_y - wp.window_size_x * 0.02 - wp.font_size, white_text);
+        // pause indicator
+        if (sim_running) SDL_WriteText(renderer, g_font, "Sim Running...", wp.window_size_x * 0.75, wp.window_size_y * 0.015, white_text);
+        else SDL_WriteText(renderer, g_font, "Sim Paused", wp.window_size_x * 0.75, wp.window_size_y * 0.015, white_text);
 
         // present the renderer to the screen
         SDL_RenderPresent(renderer);

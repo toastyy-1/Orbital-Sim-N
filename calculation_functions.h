@@ -13,10 +13,11 @@
 extern const double G;
 extern TTF_Font* g_font;
 
-void calculateForce(body_properties_t *b, body_properties_t b2);
-void updateMotion(body_properties_t *b, double dt);
-void transformCoordinates(body_properties_t *b, window_params_t window_params);
+void calculateForce(body_properties_t* b, body_properties_t b2);
+void updateMotion(body_properties_t* b, double dt);
+void transformCoordinates(body_properties_t* b, window_params_t window_params);
 int calculateVisualRadius(body_properties_t body, window_params_t wp);
 void addOrbitalBody(body_properties_t** gb, int* num_bodies, double mass, double x_pos, double y_pos, double x_vel, double y_vel);
+void resetSim(double* sim_time, body_properties_t** gb, int* num_bodies);
 
 #endif

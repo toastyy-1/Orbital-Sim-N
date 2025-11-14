@@ -41,15 +41,11 @@ void transformCoordinates(body_properties_t *b, window_params_t wp) {
     b->pixel_coordinates_y = wp.screen_origin_y - (int)(b->pos_y / wp.meters_per_pixel); // this is negative because the SDL origin is in the top left, so positive y is 'down'
 }
 
-
-
-
 // calculates the size (in pixels) that the planet should appear on the screen based on its mass
 int calculateVisualRadius(body_properties_t body, window_params_t wp) {
     int r = (int)(body.radius / wp.meters_per_pixel);
     return r;
 }
-
 
 // function to add a new body to the system
 void addOrbitalBody(body_properties_t** gb, int* num_bodies, double mass, double x_pos, double y_pos, double x_vel, double y_vel) {
@@ -71,6 +67,19 @@ void addOrbitalBody(body_properties_t** gb, int* num_bodies, double mass, double
     (*num_bodies)++;
 }
 
-// function to remove a body from the system
+// reset the simulation by removing all bodies from the system
+void resetSim(double* sim_time, body_properties_t** gb, int* num_bodies) {
+    // reset simulation time to 0
+    *sim_time = 0;
+
+    // free all bodies from memory
+    if (*gb != NULL) {
+        free(*gb);
+        *gb = NULL;
+    }
+
+    // reset body count to 0
+    *num_bodies = 0;
+}
 
 // calculate the optimum velocity for an object to orbit a given body based on the orbit radius

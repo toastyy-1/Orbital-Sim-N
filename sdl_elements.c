@@ -111,7 +111,7 @@ void drawSpeedControl(SDL_Renderer* renderer, speed_control_t* control, double m
 }
 
 // the event handling code... checks if events are happening for input and does a task based on that input
-void runEventCheck(SDL_Event* event, bool* loop_running_condition, speed_control_t* speed_control, window_params_t* wp, bool* sim_running, body_properties_t** bodies, int* num_bodies) {
+void runEventCheck(SDL_Event* event, bool* loop_running_condition, speed_control_t* speed_control, window_params_t* wp, bool* sim_running, body_properties_t** bodies, int* num_bodies, double* sim_time) {
     while (SDL_PollEvent(event)) {
         // check if x button is pressed to quit
         if (event->type == SDL_EVENT_QUIT) {
@@ -162,6 +162,9 @@ void runEventCheck(SDL_Event* event, bool* loop_running_condition, speed_control
                 else if (*sim_running == true) {
                     *sim_running = false;
                 }
+            }
+            else if (event->key.key == SDLK_R) {
+                resetSim(sim_time, bodies, num_bodies);
             }
         }
         // check if window is resized
@@ -214,5 +217,5 @@ void drawStatsBox(SDL_Renderer* renderer, body_properties_t* bodies, int num_bod
     else {
         snprintf(time, sizeof(time), "Sim time: %.1f days", sim_time/86400); // sim time in days
     }
-    SDL_WriteText(renderer, g_font, time, wp.window_size_x * 0.8, wp.window_size_y * 0.015, text_color);
+    SDL_WriteText(renderer, g_font, time, wp.window_size_x * 0.75, wp.window_size_y * 0.04, text_color);
 }
