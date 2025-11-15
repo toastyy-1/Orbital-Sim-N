@@ -1,4 +1,4 @@
-# Orbital Mechanics Simulator
+# Orbital Simulation Software N
 
 A real-time gravitational physics simulator built in C with SDL3.
 
@@ -33,7 +33,7 @@ This program simulates gravitational interactions between celestial bodies using
 - **Space**: Pause/resume simulation
 - **Left Click**: Add a new orbital body at cursor position
 - **R**: Reset simulation to initial state
-- **Speed Control Box**: Click and drag to adjust simulation speed
+- **Speed Control Box**: Hoover over and scroll to adjust simulation speed
 
 ### Compilation Dependencies
 - **SDL3**: Graphics rendering and window management
