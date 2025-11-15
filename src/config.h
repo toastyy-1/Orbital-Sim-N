@@ -11,6 +11,7 @@ typedef struct {
     bool window_open;
     bool sim_running;
     double sim_time;
+    bool speed_control_box_hovered;
 } window_params_t;
 
 typedef struct {

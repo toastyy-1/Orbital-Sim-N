@@ -3,6 +3,7 @@
 # CMake build directories and files
 build/
 releases/
+vcpkg_installed/
 cmake-build-*/
 CMakeCache.txt
 CMakeFiles/

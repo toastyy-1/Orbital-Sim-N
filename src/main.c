@@ -1,4 +1,8 @@
-#include <stdio.h>
+#ifdef _WIN32
+    #include <windows.h>
+#else
+    #include <unistd.h>
+#endif
 #include <stdlib.h>
 #include <math.h>
 #include <SDL3/SDL.h>
@@ -7,7 +11,6 @@
 #include <string.h>
 #include <stdbool.h>
 #include <time.h>
-#include <unistd.h>
 #include "calculation_functions.h"
 #include "sdl_elements.h"
 
@@ -45,8 +48,8 @@ int main(int argc, char* argv[]) {
 
     speed_control_t speed_control = {
         wp.window_size_x * 0.01,  // x position
-        wp.window_size_y * 0.01,  // y position
-        wp.window_size_x * 0.15,  // width
+        wp.window_size_y * 0.007,  // y position
+        wp.window_size_x * 0.25,  // width
         wp.window_size_y * 0.04,  // height
         false                                // is_hovered
     };

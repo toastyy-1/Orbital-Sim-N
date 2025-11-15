@@ -1,18 +1,20 @@
 cmake_minimum_required(VERSION 3.20)
-project(orbit_simulation C)
 
-# Set C standard
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-# Build output directories - everything goes to build root
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+set(CMAKE_TOOLCHAIN_FILE "C:/vcpkg/scripts/buildsystems/vcpkg.cmake")
 
-# Find SDL3 package
-find_package(SDL3 REQUIRED CONFIG REQUIRED COMPONENTS SDL3)
-find_package(SDL3_ttf REQUIRED CONFIG REQUIRED)
+# Set vcpkg target triplet if not already set
+if(NOT DEFINED VCPKG_TARGET_TRIPLET)
+    set(VCPKG_TARGET_TRIPLET "x64-windows")
+endif()
+
+project(OrbitSimulation C)
+
+# Find SDL3 packages
+find_package(SDL3 CONFIG REQUIRED)
+find_package(SDL3_ttf CONFIG REQUIRED)
 
 # Source files
 set(SOURCES
@@ -21,7 +23,7 @@ set(SOURCES
     src/sdl_elements.c
 )
 
-# Header files (for IDE organization)
+# Header files
 set(HEADERS
     src/config.h
     src/calculation_functions.h
@@ -29,62 +31,41 @@ set(HEADERS
 )
 
 # Create executable
-add_executable(orbital_sim ${SOURCES} ${HEADERS})
+add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
+if(WIN32)
+    set_target_properties(${PROJECT_NAME} PROPERTIES WIN32_EXECUTABLE TRUE)
+endif()
 
-# Link libraries
-target_link_libraries(orbital_sim
-    PRIVATE
+# Link SDL3 libraries
+target_link_libraries(${PROJECT_NAME} PRIVATE
     SDL3::SDL3
     SDL3_ttf::SDL3_ttf
 )
 
-# Include directories
-target_include_directories(orbital_sim PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+# Copy font file to build directory
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_SOURCE_DIR}/assets/CascadiaCode.ttf"
+        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/CascadiaCode.ttf"
+)
 
-# Copy font file directly to build directory
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/assets/CascadiaCode.ttf
-               ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/CascadiaCode.ttf COPYONLY)
+# Copy data files to build directory
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_SOURCE_DIR}/data"
+        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/"
+)
 
-# Copy CSV file directly to build directory
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/data/planet_data.csv
-               ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/planet_data.csv COPYONLY)
-
-# Platform-specific settings
+# On Windows, copy SDL3 DLLs to build directory
 if(WIN32)
-    # Windows-specific settings
-    target_link_libraries(orbital_sim PRIVATE m)
-
-    # Copy SDL3 DLLs and all dependencies to build directory for distribution
-    add_custom_command(TARGET orbital_sim POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E echo "Copying SDL3 DLLs..."
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:SDL3::SDL3>
-            $<TARGET_FILE_DIR:orbital_sim>
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>
+    )
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:SDL3_ttf::SDL3_ttf>
-            $<TARGET_FILE_DIR:orbital_sim>
-        COMMENT "Copying SDL3 DLLs to build directory"
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>
     )
-
-    # Copy all MinGW runtime dependencies
-    add_custom_command(TARGET orbital_sim POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E echo "Copying DLL dependencies..."
-        COMMAND bash -c "ldd $<TARGET_FILE:orbital_sim> | grep mingw64 | cut -d' ' -f3 | xargs -I {} cp -n -v {} $<TARGET_FILE_DIR:orbital_sim> 2>/dev/null || true"
-        COMMENT "Copying MinGW and library dependencies"
-    )
-
-    # Strip debug symbols for smaller file size in Release builds
-    if(CMAKE_BUILD_TYPE STREQUAL "Release")
-        target_link_options(orbital_sim PRIVATE -s)
-    endif()
-elseif(UNIX)
-    # Unix/Linux-specific settings
-    target_link_libraries(orbital_sim PRIVATE m)
-endif()
-
-# Enable warnings
-if(MSVC)
-    target_compile_options(orbital_sim PRIVATE /W4)
-else()
-    target_compile_options(orbital_sim PRIVATE -Wall -Wextra -Wpedantic)
 endif()
