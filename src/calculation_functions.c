@@ -78,6 +78,9 @@ void resetSim(double* sim_time, body_properties_t** gb, int* num_bodies) {
 
     // free all bodies from memory
     if (*gb != NULL) {
+        for (int i = 0; i < *num_bodies; i++) {
+            free((*gb)[i].name);
+        }
         free(*gb);
         *gb = NULL;
     }

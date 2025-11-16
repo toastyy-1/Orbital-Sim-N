@@ -98,12 +98,7 @@ int main(int argc, char* argv[]) {
         runCalculations(&global_bodies, &wp, num_bodies);
 
         // render the bodies
-        for (int i = 0; i < num_bodies; i++) {
-            // draw bodies
-            SDL_RenderFillCircle(renderer, global_bodies[i].pixel_coordinates_x,
-                            global_bodies[i].pixel_coordinates_y, 
-                            calculateVisualRadius(global_bodies[i], wp));
-        }
+        renderOrbitBodies(renderer, global_bodies, num_bodies, wp);
 
         ////////////////////////////////////////////////////
         // UI ELEMENTS                                    //
@@ -115,13 +110,10 @@ int main(int argc, char* argv[]) {
         drawSpeedControl(renderer, &speed_control, wp);
 
         // draw stats box
-        if (global_bodies != NULL) drawStatsBox(renderer, global_bodies, num_bodies, wp.sim_time, wp);
+        drawStatsBox(renderer, global_bodies, num_bodies, wp.sim_time, wp);
 
         // help text at the bottom
-        SDL_WriteText(renderer, g_font, "Space: pause/resume | Left Click: add body | R: Reset", wp.window_size_x * 0.4, wp.window_size_y - wp.window_size_x * 0.02 - wp.font_size, white_text);
-        // pause indicator
-        if (wp.sim_running) SDL_WriteText(renderer, g_font, "Sim Running...", wp.window_size_x * 0.75, wp.window_size_y * 0.015, white_text);
-        else SDL_WriteText(renderer, g_font, "Sim Paused", wp.window_size_x * 0.75, wp.window_size_y * 0.015, white_text);
+        SDL_WriteText(renderer, g_font, "Space: pause/resume | R: Reset", wp.window_size_x * 0.4, wp.window_size_y - wp.window_size_x * 0.02 - wp.font_size, white_text);
 
         // present the renderer to the screen
         SDL_RenderPresent(renderer);

@@ -7,18 +7,15 @@ typedef struct {
     int screen_origin_x, screen_origin_y;
     double meters_per_pixel;
     int font_size;
-    bool reset_sim;
     bool window_open;
     bool sim_running;
     double sim_time;
-    bool speed_control_box_hovered;
 } window_params_t;
 
 typedef struct {
     char* name;
     double mass;
     int radius; // this is an approximate value just for visual purposes
-    int visual_radius;
     double r_from_body;
     double pos_x;
     double pos_y;

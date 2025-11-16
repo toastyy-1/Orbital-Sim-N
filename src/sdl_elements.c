@@ -87,10 +87,20 @@ bool isMouseInRect(int mouse_x, int mouse_y, int rect_x, int rect_y, int rect_w,
             mouse_y >= rect_y && mouse_y <= rect_y + rect_h);
 }
 
+void renderOrbitBodies(SDL_Renderer* renderer, body_properties_t* gb, int num_bodies, window_params_t wp) {
+    for (int i = 0; i < num_bodies; i++) {
+        // draw bodies
+        SDL_RenderFillCircle(renderer, gb[i].pixel_coordinates_x,
+                        gb[i].pixel_coordinates_y, 
+                        calculateVisualRadius(gb[i], wp));
+    }
+}
+
 // the speed control box
 void drawSpeedControl(SDL_Renderer* renderer, speed_control_t* control, window_params_t wp) {
     // background color
     SDL_SetRenderDrawColor(renderer, 80, 80, 120, 255);
+    if (control->is_hovered) SDL_SetRenderDrawColor(renderer, 50, 50, 90, 255);
 
     SDL_FRect bg_rect = {
         (float)control->x,
@@ -118,12 +128,14 @@ void drawStatsBox(SDL_Renderer* renderer, body_properties_t* bodies, int num_bod
     int line_height = wp.window_size_y * 0.02;
 
     // all calculations for things to go inside the box:
-    for (int i = 0; i < num_bodies; i++) {
-        char vel_text[32];
-        snprintf(vel_text, sizeof(vel_text), "Vel of %s: %.1f", bodies[i].name, bodies[i].vel);
+    if (bodies != NULL) {
+        for (int i = 0; i < num_bodies; i++) {
+            char vel_text[32];
+            snprintf(vel_text, sizeof(vel_text), "Vel of %s: %.1f", bodies[i].name, bodies[i].vel);
 
-        // render text
-        SDL_WriteText(renderer, g_font, vel_text, margin_x, start_y + i * line_height, text_color);
+            // render text
+            SDL_WriteText(renderer, g_font, vel_text, margin_x, start_y + i * line_height, text_color);
+        }
     }
 
     // show sim time in the top corner
@@ -141,6 +153,10 @@ void drawStatsBox(SDL_Renderer* renderer, body_properties_t* bodies, int num_bod
         snprintf(time, sizeof(time), "Sim time: %.1f days", sim_time/86400); // sim time in days
     }
     SDL_WriteText(renderer, g_font, time, wp.window_size_x * 0.75, wp.window_size_y * 0.04, text_color);
+
+    // show paused indication
+    if (wp.sim_running) SDL_WriteText(renderer, g_font, "Sim Running...", wp.window_size_x * 0.75, wp.window_size_y * 0.015, text_color);
+    else SDL_WriteText(renderer, g_font, "Sim Paused", wp.window_size_x * 0.75, wp.window_size_y * 0.015, text_color);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -149,13 +165,23 @@ void drawStatsBox(SDL_Renderer* renderer, body_properties_t* bodies, int num_bod
 // the event handling code... checks if events are happening for input and does a task based on that input
 void runEventCheck(SDL_Event* event, speed_control_t* speed_control, window_params_t* wp, body_properties_t** bodies, int* num_bodies) {
     while (SDL_PollEvent(event)) {
-        // check if x button is pressed to quit        
+        // check if x button is pressed to quit
         if (event->type == SDL_EVENT_QUIT) {
             wp->window_open = false;
         }
         // check if mouse button is clicked
         else if (event->type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
 
+        }
+        // check if mouse is moving to update hover state
+        else if (event->type == SDL_EVENT_MOUSE_MOTION) {
+            int mouse_x = (int)event->motion.x;
+            int mouse_y = (int)event->motion.y;
+
+            // update hover state for speed control
+            speed_control->is_hovered = isMouseInRect(mouse_x, mouse_y,
+                speed_control->x, speed_control->y,
+                speed_control->width, speed_control->height);
         }
         // check if scroll
         else if (event->type == SDL_EVENT_MOUSE_WHEEL) {
