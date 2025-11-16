@@ -156,26 +156,28 @@ void renderButton(SDL_Renderer* renderer, button_t* button, const char* text, wi
 }
 
 // renders all of the buttons on the screen, this function holds all button drawing logic
+// remember: you must add this button to the event handling logic for it to work!!!
+// remember: you must add each button to the button_storage_t struct!
 void renderUIButtons(SDL_Renderer* renderer, button_storage_t* buttons, window_params_t* wp) {
     // speed control button
     char speed_text[32];
     snprintf(speed_text, sizeof(speed_text), "Speed: %.2f s/frame", wp->time_step);
     renderButton(renderer, &buttons->sc_button, speed_text, *wp);
+
+    // csv loading button
+    char csv_text[6] = "csv";
+    renderButton(renderer, &buttons->csv_load_button, csv_text, *wp);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // EVENT CHECKING FUNCTION
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // the event handling code... checks if events are happening for input and does a task based on that input
-void runEventCheck(SDL_Event* event, window_params_t* wp, body_properties_t** bodies, int* num_bodies, button_storage_t* buttons) {
+void runEventCheck(SDL_Event* event, window_params_t* wp, body_properties_t** gb, int* num_bodies, button_storage_t* buttons) {
     while (SDL_PollEvent(event)) {
         // check if x button is pressed to quit
         if (event->type == SDL_EVENT_QUIT) {
             wp->window_open = false;
-        }
-        // check if mouse button is clicked
-        else if (event->type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
-
         }
         // check if mouse is moving to update hover state
         else if (event->type == SDL_EVENT_MOUSE_MOTION) {
@@ -186,6 +188,18 @@ void runEventCheck(SDL_Event* event, window_params_t* wp, body_properties_t** bo
             buttons->sc_button.is_hovered = isMouseInRect(mouse_x, mouse_y,
                 buttons->sc_button.x, buttons->sc_button.y,
                 buttons->sc_button.width, buttons->sc_button.height);
+            
+            // update hover state for csv loading button
+            buttons->csv_load_button.is_hovered = isMouseInRect(mouse_x, mouse_y, 
+                buttons->csv_load_button.x, buttons->csv_load_button.y,
+                buttons->csv_load_button.width, buttons->csv_load_button.height);
+        }
+        // check if mouse button is clicked
+        else if (event->type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
+            if (buttons->csv_load_button.is_hovered) {
+                // reads the CSV file associated with loading orbital bodies
+                readCSV("planet_data.csv", gb, num_bodies);
+            }
         }
         // check if scroll
         else if (event->type == SDL_EVENT_MOUSE_WHEEL) {
@@ -222,7 +236,7 @@ void runEventCheck(SDL_Event* event, window_params_t* wp, body_properties_t** bo
                 }
             }
             else if (event->key.key == SDLK_R) {
-                resetSim(&wp->sim_time, bodies, num_bodies);
+                resetSim(&wp->sim_time, gb, num_bodies);
             }
         }
         // check if window is resized

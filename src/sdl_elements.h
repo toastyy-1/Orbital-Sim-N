@@ -21,6 +21,7 @@ typedef struct {
 
 typedef struct {
     button_t sc_button;
+    button_t csv_load_button;
 } button_storage_t;
 
 void SDL_RenderFillCircle(SDL_Renderer* renderer, int centerX, int centerY, int radius);

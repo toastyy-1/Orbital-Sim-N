@@ -55,6 +55,14 @@ int main(int argc, char* argv[]) {
     buttons.sc_button.is_hovered = false;
     buttons.sc_button.normal_color = (SDL_Color){80, 80, 120, 255};
     buttons.sc_button.hover_color = (SDL_Color){50, 50, 90, 255};
+    // initialize csv loading button
+    buttons.csv_load_button.x = wp.window_size_x - wp.window_size_x * 0.01 - wp.window_size_x * 0.04;
+    buttons.csv_load_button.y = wp.window_size_y - wp.window_size_y * 0.007 - wp.window_size_x * 0.04;
+    buttons.csv_load_button.width = wp.window_size_x * 0.04;
+    buttons.csv_load_button.height = wp.window_size_y * 0.04;
+    buttons.csv_load_button.is_hovered = false;
+    buttons.csv_load_button.normal_color = (SDL_Color){80, 80, 120, 255};
+    buttons.csv_load_button.hover_color = (SDL_Color){50, 50, 90, 255};
 
     SDL_Color white_text = {255, 255, 255, 255};
 
@@ -74,9 +82,6 @@ int main(int argc, char* argv[]) {
     // SDL ttf font stuff
     TTF_Init();
     g_font = TTF_OpenFont("CascadiaCode.ttf", wp.font_size);
-
-    // reads the CSV file associated with loading orbital bodies
-    readCSV(FILENAME, &global_bodies, &num_bodies);
 
     ////////////////////////////////////////////////////////
     // simulation loop                                    //
