@@ -15,7 +15,6 @@ void renderStatsBox(SDL_Renderer* renderer, body_properties_t* bodies, int num_b
         for (int i = 0; i < num_bodies; i++) {
             char vel_text[32];
             snprintf(vel_text, sizeof(vel_text), "Vel of %s: %.1f", bodies[i].name, bodies[i].vel);
-
             // render text
             SDL_WriteText(renderer, g_font, vel_text, margin_x, start_y + i * line_height, TEXT_COLOR);
         }
