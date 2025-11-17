@@ -2,6 +2,32 @@
 #include "config.h"
 #include "sdl_elements.h"
 
+extern SDL_Color TEXT_COLOR;
+
+// the stats box that shows stats yay
+void renderStatsBox(SDL_Renderer* renderer, body_properties_t* bodies, int num_bodies, window_params_t wp) {
+    int margin_x = wp.window_size_x * 0.02;
+    int start_y = wp.window_size_y * 0.07;
+    int line_height = wp.window_size_y * 0.02;
+
+    // all calculations for things to go inside the box:
+    if (bodies != NULL) {
+        for (int i = 0; i < num_bodies; i++) {
+            char vel_text[32];
+            snprintf(vel_text, sizeof(vel_text), "Vel of %s: %.1f", bodies[i].name, bodies[i].vel);
+
+            // render text
+            SDL_WriteText(renderer, g_font, vel_text, margin_x, start_y + i * line_height, TEXT_COLOR);
+        }
+    }
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// SDL WINDOW STUFF
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 // initialize the stats window
 bool statsWindowInit(stats_window_t* stats) {
     if (!stats) return false;
@@ -38,19 +64,6 @@ void StatsWindow_handleEvent(stats_window_t* stats, SDL_Event* e) {
     }
 }
 
-// render the stats window with data from main window
-void StatsWindow_render(stats_window_t* stats, int fps, float posX, float posY, body_properties_t* gb, int num_bodies, window_params_t wp) {
-    if (!stats->is_shown) return;
-    
-    SDL_SetRenderDrawColor(stats->renderer, 30, 30, 30, 255);
-    SDL_RenderClear(stats->renderer);
-
-    // draw the stats
-    drawStatsBox(stats->renderer, gb, num_bodies, wp.sim_time, wp);
-    
-    SDL_RenderPresent(stats->renderer);
-}
-
 // show the window
 void StatsWindow_show(stats_window_t* stats) {
     SDL_ShowWindow(stats->window);
@@ -65,4 +78,20 @@ void StatsWindow_destroy(stats_window_t* stats) {
     if (stats->window) {
         SDL_DestroyWindow(stats->window);
     }
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// MAIN RENDER LOGIC
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// render the stats window with data from main window
+void StatsWindow_render(stats_window_t* stats, int fps, float posX, float posY, body_properties_t* gb, int num_bodies, window_params_t wp) {
+    if (!stats->is_shown) return;
+    
+    SDL_SetRenderDrawColor(stats->renderer, 30, 30, 30, 255);
+    SDL_RenderClear(stats->renderer);
+
+    // draw the stats
+    renderStatsBox(stats->renderer, gb, num_bodies, wp);
+    
+    SDL_RenderPresent(stats->renderer);
 }

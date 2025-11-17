@@ -105,42 +105,27 @@ void renderOrbitBodies(SDL_Renderer* renderer, body_properties_t* gb, int num_bo
     }
 }
 
-// the stats box that shows stats yay
-void drawStatsBox(SDL_Renderer* renderer, body_properties_t* bodies, int num_bodies, double sim_time, window_params_t wp) {
-    int margin_x = wp.window_size_x * 0.02;
-    int start_y = wp.window_size_y * 0.07;
-    int line_height = wp.window_size_y * 0.02;
-
-    // all calculations for things to go inside the box:
-    if (bodies != NULL) {
-        for (int i = 0; i < num_bodies; i++) {
-            char vel_text[32];
-            snprintf(vel_text, sizeof(vel_text), "Vel of %s: %.1f", bodies[i].name, bodies[i].vel);
-
-            // render text
-            SDL_WriteText(renderer, g_font, vel_text, margin_x, start_y + i * line_height, TEXT_COLOR);
-        }
-    }
-
+void renderTimeIndicators(SDL_Renderer* renderer, window_params_t wp) {
     // show sim time in the top corner
     char time[32];
-    if (sim_time < 60) {
-        snprintf(time, sizeof(time), "Sim time: %.f s", sim_time); // sim time in seconds
+    if (wp.sim_time < 60) {
+        snprintf(time, sizeof(time), "Sim time: %.f s", wp.sim_time); // sim time in seconds
     }
-    else if (sim_time > 60 && sim_time < 3600) {
-        snprintf(time, sizeof(time), "Sim time: %.f mins", sim_time/60); // sim time in minutes
+    else if (wp.sim_time > 60 && wp.sim_time < 3600) {
+        snprintf(time, sizeof(time), "Sim time: %.f mins", wp.sim_time/60); // sim time in minutes
     }
-    else if (sim_time > 3600 && sim_time < 86400) {
-        snprintf(time, sizeof(time), "Sim time: %.1f hrs", sim_time/3600); // sim time in hours
+    else if (wp.sim_time > 3600 && wp.sim_time < 86400) {
+        snprintf(time, sizeof(time), "Sim time: %.1f hrs", wp.sim_time/3600); // sim time in hours
     }
     else {
-        snprintf(time, sizeof(time), "Sim time: %.1f days", sim_time/86400); // sim time in days
+        snprintf(time, sizeof(time), "Sim time: %.1f days", wp.sim_time/86400); // sim time in days
     }
     SDL_WriteText(renderer, g_font, time, wp.window_size_x * 0.75, wp.window_size_y * 0.04, TEXT_COLOR);
 
     // show paused indication
     if (wp.sim_running) SDL_WriteText(renderer, g_font, "Sim Running...", wp.window_size_x * 0.75, wp.window_size_y * 0.015, TEXT_COLOR);
     else SDL_WriteText(renderer, g_font, "Sim Paused", wp.window_size_x * 0.75, wp.window_size_y * 0.015, TEXT_COLOR);
+
 }
 
 // generic button renderer

@@ -118,6 +118,9 @@ int main(int argc, char* argv[]) {
         // render text input dialog if active
         renderBodyTextInputDialog(renderer, &dialog, wp);
 
+        // draw time indicator text
+        renderTimeIndicators(renderer, wp);
+
         // render the stats window if active
         if (stats_window.is_shown) {
             StatsWindow_render(&stats_window, 60, 0, 0, global_bodies, num_bodies, wp);
