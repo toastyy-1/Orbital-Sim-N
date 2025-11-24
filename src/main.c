@@ -122,7 +122,7 @@ int main(int argc, char* argv[]) {
         renderTimeIndicators(renderer, wp);
 
         // render the stats window if active
-        if (stats_window.is_shown) StatsWindow_render(&stats_window, 60, 0, 0, gb, num_bodies, wp);
+        if (stats_window.is_shown) StatsWindow_render(&stats_window, 60, 0, 0, gb, num_bodies, sc, num_craft, wp);
 
         // present the renderer to the screen
         SDL_RenderPresent(renderer);

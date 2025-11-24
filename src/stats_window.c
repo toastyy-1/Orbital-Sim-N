@@ -1,6 +1,7 @@
 #include "stats_window.h"
 #include "config.h"
 #include "sdl_elements.h"
+#include "sim_calculations.h"
 #include <stdio.h>
 
 extern SDL_Color TEXT_COLOR;
@@ -10,21 +11,51 @@ void renderGraph(SDL_Renderer* renderer, body_properties_t* bodies, int num_bodi
 }
 
 // the stats box that shows stats yay
-void renderStatsBox(SDL_Renderer* renderer, body_properties_t* bodies, int num_bodies, window_params_t wp) {
-    int margin_x = wp.window_size_x * 0.02;
-    int start_y = wp.window_size_y * 0.07;
-    int line_height = wp.window_size_y * 0.02;
+double initial_total_energy;
+bool measured_initial_total_energy = false;
+void renderStatsBox(SDL_Renderer* renderer, body_properties_t* bodies, int num_bodies, spacecraft_properties_t* sc, int num_craft, window_params_t wp) {
+    int margin_x    = (int)(wp.window_size_x * 0.02f);
+    int top_y       = (int)(wp.window_size_y * 0.07f);
+    int line_height = (int)(wp.window_size_y * 0.02f);
 
-    // all calculations for things to go inside the box:
-    if (bodies != NULL) {
-        for (int i = 0; i < num_bodies; i++) {
-            char vel_text[32];
-            snprintf(vel_text, sizeof(vel_text), "Vel of %s: %.1f", bodies[i].name, bodies[i].vel);
-            // render text
-            SDL_WriteText(renderer, g_font, vel_text, margin_x, start_y + i * line_height, TEXT_COLOR);
-        }
-        renderGraph(renderer, bodies, num_bodies, wp);
+    if (!bodies) return;
+
+    int y = top_y;
+
+    // velocities
+    for (int i = 0; i < num_bodies; i++) {
+        char vel_text[32];
+        snprintf(vel_text, sizeof(vel_text), "Vel of %s: %.2e", bodies[i].name, bodies[i].vel);
+        SDL_WriteText(renderer, g_font, vel_text, margin_x, y, TEXT_COLOR);
+        y += line_height;
     }
+
+    // kinetic energies
+    for (int i = 0; i < num_bodies; i++) {
+        char ke_text[32];
+        snprintf(ke_text, sizeof(ke_text), "KE of %s: %.2e", bodies[i].name, bodies[i].kinetic_energy);
+        SDL_WriteText(renderer, g_font, ke_text, margin_x, y, TEXT_COLOR);
+        y += line_height;
+    }
+
+    // total system energy
+    double total_energy = calculateTotalSystemEnergy(bodies, sc, num_bodies, num_craft);
+    char total_energy_text[32];
+    snprintf(total_energy_text, sizeof(total_energy_text), "Total System Energy: %.2e", total_energy);
+    SDL_WriteText(renderer, g_font, total_energy_text, margin_x, y, TEXT_COLOR);
+    y += line_height;
+
+    // total error
+    if (!measured_initial_total_energy) {
+        initial_total_energy = total_energy;
+        measured_initial_total_energy = true;
+    }
+    double error = (initial_total_energy != 0) ? (initial_total_energy - total_energy) / initial_total_energy * 100.0 : 0.0;
+    char error_text[32];
+    snprintf(error_text, sizeof(error_text), "Energy Error: %.4f%%", error);
+    SDL_WriteText(renderer, g_font, error_text, margin_x, y, TEXT_COLOR);
+
+    renderGraph(renderer, bodies, num_bodies, wp);
 }
 
 
@@ -89,14 +120,14 @@ void StatsWindow_destroy(stats_window_t* stats) {
 // MAIN RENDER LOGIC
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // render the stats window with data from main window
-void StatsWindow_render(stats_window_t* stats, int fps, float posX, float posY, body_properties_t* gb, int num_bodies, window_params_t wp) {
+void StatsWindow_render(stats_window_t* stats, int fps, float posX, float posY, body_properties_t* gb, int num_bodies, spacecraft_properties_t* sc, int num_craft, window_params_t wp) {
     if (!stats->is_shown) return;
-    
+
     SDL_SetRenderDrawColor(stats->renderer, 30, 30, 30, 255);
     SDL_RenderClear(stats->renderer);
 
     // draw the stats
-    renderStatsBox(stats->renderer, gb, num_bodies, wp);
-    
+    renderStatsBox(stats->renderer, gb, num_bodies, sc, num_craft, wp);
+
     SDL_RenderPresent(stats->renderer);
 }

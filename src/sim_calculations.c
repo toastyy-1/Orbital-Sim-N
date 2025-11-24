@@ -18,8 +18,7 @@ void body_calculateGravForce(body_properties_t *b, body_properties_t b2) {
     // calculate the distance between the two bodies
     double delta_pos_x = b2.pos_x - b->pos_x;
     double delta_pos_y = b2.pos_y - b->pos_y;
-    b->r_from_body = sqrt(delta_pos_x * delta_pos_x + delta_pos_y * delta_pos_y);
-    double r = b->r_from_body;
+    double r = sqrt(delta_pos_x * delta_pos_x + delta_pos_y * delta_pos_y);
 
     // calculate the force that b2 applies on b due to gravitation (F = (GMm) / r)
     double total_force = (G * b->mass * b2.mass) / (r * r);
@@ -49,48 +48,55 @@ void body_updateMotion(body_properties_t *b, double dt) {
     b->acc_y_prev = b->acc_y;
 }
 
-// transforms spacial coordinates (for example, in meters) to pixel coordinates
-void body_transformCoordinates(body_properties_t *b, window_params_t wp) {
-    b->pixel_coordinates_x = wp.screen_origin_x + (int)(b->pos_x / wp.meters_per_pixel);
-    b->pixel_coordinates_y = wp.screen_origin_y - (int)(b->pos_y / wp.meters_per_pixel); // this is negative because the SDL origin is in the top left, so positive y is 'down'
-}
-
-// calculates the kinetic energy of a specific body
+// calculates the kinetic energy of a target body
 void body_calculateKineticEnergy(body_properties_t *b) {
     // calculate kinetic energy (0.5mv^2)
     b->kinetic_energy = 0.5f * b->mass * b->vel * b->vel;
 }
 
-// determine the potential energy of a body relative to another target body
-double body_calculatePotentialEnergy(body_properties_t b, const char* target_name, body_properties_t* gb, int num_bodies) {
-    // search for the target body by name
-    body_properties_t* target_body = NULL;
+// calculate total system energy for all bodies
+// this avoids double-counting by only calculating each pair interaction once
+double calculateTotalSystemEnergy(body_properties_t* gb, spacecraft_properties_t* sc, int num_bodies, int num_craft) {
+    double total_kinetic = 0.0;
+    double total_potential = 0.0;
+
+    // calculate kinetic energy for all bodies
     for (int i = 0; i < num_bodies; i++) {
-        if (strcmp(gb[i].name, target_name) == 0) {
-            target_body = &gb[i];
-            break;
+        total_kinetic += 0.5 * gb[i].mass * gb[i].vel * gb[i].vel;
+    }
+
+    // calculate kinetic energy for all spacecraft
+    for (int i = 0; i < num_craft; i++) {
+        total_kinetic += 0.5 * sc[i].current_total_mass * sc[i].vel * sc[i].vel;
+    }
+
+    // calculate potential energy between all body pairs
+    for (int i = 0; i < num_bodies; i++) {
+        for (int j = i + 1; j < num_bodies; j++) {
+            double delta_x = gb[j].pos_x - gb[i].pos_x;
+            double delta_y = gb[j].pos_y - gb[i].pos_y;
+            double r = sqrt(delta_x * delta_x + delta_y * delta_y);
+            total_potential += -(G * gb[i].mass * gb[j].mass) / r;
         }
     }
 
-    // if target body not found, return 0
-    if (target_body == NULL) {
-        return 0.0;
+    // calculate potential energy between spacecraft and bodies
+    for (int i = 0; i < num_craft; i++) {
+        for (int j = 0; j < num_bodies; j++) {
+            double delta_x = gb[j].pos_x - sc[i].pos_x;
+            double delta_y = gb[j].pos_y - sc[i].pos_y;
+            double r = sqrt(delta_x * delta_x + delta_y * delta_y);
+            total_potential += -(G * sc[i].current_total_mass * gb[j].mass) / r;
+        }
     }
 
-    // calculate distance between the bodies
-    double delta_pos_x = target_body->pos_x - b.pos_x;
-    double delta_pos_y = target_body->pos_y - b.pos_y;
-    double r = sqrt(delta_pos_x * delta_pos_x + delta_pos_y * delta_pos_y);
+    return total_kinetic + total_potential;
+}
 
-    // avoid division by zero
-    if (r == 0.0) {
-        return 0.0;
-    }
-
-    // calculate gravitational potential energy (U = -GMm/r)
-    double potential_energy = -(G * b.mass * target_body->mass) / r;
-
-    return potential_energy;
+// transforms spacial coordinates (for example, in meters) to pixel coordinates
+void body_transformCoordinates(body_properties_t *b, window_params_t wp) {
+    b->pixel_coordinates_x = wp.screen_origin_x + (int)(b->pos_x / wp.meters_per_pixel);
+    b->pixel_coordinates_y = wp.screen_origin_y - (int)(b->pos_y / wp.meters_per_pixel); // this is negative because the SDL origin is in the top left, so positive y is 'down'
 }
 
 // calculates the size (in pixels) that the planet should appear on the screen based on its mass
@@ -310,6 +316,7 @@ void resetSim(double* sim_time, body_properties_t** gb, int* num_bodies, spacecr
 }
 
 // calculate the optimum velocity for an object to orbit a given body based on the orbit radius
+// (funciton does not exist yet)
 
 // CSV handling logic for implementing orbital bodies via CSV file
 void createCSV(char* FILENAME) {
@@ -433,6 +440,8 @@ void runCalculations(body_properties_t** gb, spacecraft_properties_t** sc, windo
                         body_calculateGravForce(&(*gb)[i], (*gb)[j]);
                     }
                 }
+                // calculate kinetic energy for this body
+                body_calculateKineticEnergy(&(*gb)[i]);
             }
 
             // update the motion for each body and draw

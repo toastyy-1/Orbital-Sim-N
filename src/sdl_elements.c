@@ -63,7 +63,7 @@ void SDL_RenderFillCircle(SDL_Renderer* renderer, int centerX, int centerY, int 
 void SDL_WriteText(SDL_Renderer* renderer, TTF_Font* font, const char* text, float x, float y, SDL_Color color) {
     if (!text || !font || !renderer) return;
     
-    SDL_Surface* text_surface = TTF_RenderText_Solid(font, text, 0, color);
+    SDL_Surface* text_surface = TTF_RenderText_Blended(font, text, 0, color);
     if (!text_surface) return;
     
     SDL_Texture* text_texture = SDL_CreateTextureFromSurface(renderer, text_surface);

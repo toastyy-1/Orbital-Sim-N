@@ -28,7 +28,6 @@ typedef struct {
     double mass;
     int radius; // this is an approximate value just for visual purposes
     int pixel_radius;
-    double r_from_body;
     double pos_x;
     double pos_y;
     int pixel_coordinates_x;
