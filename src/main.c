@@ -58,7 +58,6 @@ int main(int argc, char* argv[]) {
     g_font = TTF_OpenFont("CascadiaCode.ttf", wp.font_size);
     g_font_small = TTF_OpenFont("CascadiaCode.ttf", (float)wp.window_size_x / 90);
 
-
     // toggleable stats window
     stats_window_t stats_window = {0};
     SDL_Color white_text = {255, 255, 255, 255};

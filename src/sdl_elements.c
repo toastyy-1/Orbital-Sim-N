@@ -23,6 +23,12 @@ void init_window_params(window_params_t* wp) {
     wp->window_open = true;
     wp->sim_running = true;
     wp->sim_time = 0;
+
+    wp->is_dragging = false;
+    wp->drag_start_x = 0;
+    wp->drag_start_y = 0;
+    wp->drag_origin_x = 0;
+    wp->drag_origin_y = 0;
 }
 
 // initialize the text input dialogue stuff
@@ -495,12 +501,20 @@ void runEventCheck(SDL_Event* event, window_params_t* wp, body_properties_t** gb
             int mouse_x = (int)event->motion.x;
             int mouse_y = (int)event->motion.y;
 
+            // viewport dragging
+            if (wp->is_dragging) {
+                int delta_x = mouse_x - wp->drag_start_x;
+                int delta_y = mouse_y - wp->drag_start_y;
+                wp->screen_origin_x = wp->drag_origin_x + delta_x;
+                wp->screen_origin_y = wp->drag_origin_y + delta_y;
+            }
+
             // update hover state for speed control button
             buttons->sc_button.is_hovered = isMouseInRect(mouse_x, mouse_y,
                 buttons->sc_button.x, buttons->sc_button.y,
                 buttons->sc_button.width, buttons->sc_button.height);
             // update hover state for csv loading button
-            buttons->csv_load_button.is_hovered = isMouseInRect(mouse_x, mouse_y, 
+            buttons->csv_load_button.is_hovered = isMouseInRect(mouse_x, mouse_y,
                 buttons->csv_load_button.x, buttons->csv_load_button.y,
                 buttons->csv_load_button.width, buttons->csv_load_button.height);
             // update hover state for add body button'
@@ -514,7 +528,16 @@ void runEventCheck(SDL_Event* event, window_params_t* wp, body_properties_t** gb
         }
         // check if mouse button is clicked
         else if (event->type == SDL_EVENT_MOUSE_BUTTON_DOWN && event->window.windowID == wp->main_window_ID) {
-            if (buttons->csv_load_button.is_hovered) {
+            // heck if right mouse button or middle mouse button (for dragging)
+            if (event->button.button == SDL_BUTTON_RIGHT || event->button.button == SDL_BUTTON_MIDDLE) {
+                wp->is_dragging = true;
+                wp->drag_start_x = (int)event->button.x;
+                wp->drag_start_y = (int)event->button.y;
+                wp->drag_origin_x = wp->screen_origin_x;
+                wp->drag_origin_y = wp->screen_origin_y;
+            }
+            // existing button click handling
+            else if (buttons->csv_load_button.is_hovered) {
                 // reads the CSV file associated with loading orbital bodies
                 readCSV("planet_data.csv", gb, num_bodies);
                 readSpacecraftCSV("spacecraft_data.csv", sc, num_craft);
@@ -533,6 +556,12 @@ void runEventCheck(SDL_Event* event, window_params_t* wp, body_properties_t** gb
                 }
             }
             else if(buttons->show_stats_button.is_hovered && stats_window->is_shown) displayError("Warning", "The statistics window is already open!");
+        }
+        // check if mouse button is released
+        else if (event->type == SDL_EVENT_MOUSE_BUTTON_UP && event->window.windowID == wp->main_window_ID) {
+            if (event->button.button == SDL_BUTTON_RIGHT || event->button.button == SDL_BUTTON_MIDDLE) {
+                wp->is_dragging = false;
+            }
         }
         // check if scroll
         else if (event->type == SDL_EVENT_MOUSE_WHEEL && event->window.windowID == wp->main_window_ID) {

@@ -15,6 +15,12 @@ typedef struct {
     bool sim_running;
     double sim_time;
     SDL_WindowID main_window_ID;
+
+    bool is_dragging;
+    int drag_start_x;
+    int drag_start_y;
+    int drag_origin_x;
+    int drag_origin_y;
 } window_params_t;
 
 typedef struct {
