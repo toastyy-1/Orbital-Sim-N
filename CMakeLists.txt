@@ -12,9 +12,8 @@ endif()
 
 project(OrbitSimulation C)
 
-# Find threading library
-set(THREADS_PREFER_PTHREAD_FLAG ON)
-find_package(Threads REQUIRED)
+# Find pthreads library
+find_package(PThreads4W REQUIRED)
 
 # Find SDL3 packages
 find_package(SDL3 CONFIG REQUIRED)
@@ -43,12 +42,12 @@ if(WIN32)
     set_target_properties(${PROJECT_NAME} PROPERTIES WIN32_EXECUTABLE TRUE)
 endif()
 
-# Link SDL3 libraries, cJSON, and threading support
+# Link SDL3 libraries, cJSON, and pthreads
 target_link_libraries(${PROJECT_NAME} PRIVATE
     SDL3::SDL3
     SDL3_ttf::SDL3_ttf
     cjson
-    Threads::Threads
+    PThreads4W::PThreads4W
 )
 
 # Copy font file to build directory

@@ -4,7 +4,7 @@
 #else
     #include <unistd.h>
 #endif
-#include <threads.h>
+#include <pthread.h>
 #include <stdlib.h>
 #include <math.h>
 #include <SDL3/SDL.h>
@@ -25,26 +25,26 @@ const double G = 6.67430E-11;
 TTF_Font* g_font = NULL;
 TTF_Font* g_font_small = NULL;
 
-mtx_t sim_vars_mutex;
+pthread_mutex_t sim_vars_mutex;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // SIM CALCULATION FUNCTION
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-int physicsSim(void* args) {
+void* physicsSim(void* args) {
     physics_sim_args* s = (physics_sim_args*)args;
 
     while (s->wp->sim_running) {
         // lock mutex before accessing data
-        mtx_lock(&sim_vars_mutex);
+        pthread_mutex_lock(&sim_vars_mutex);
 
         // IMPORTANT -- DOES ALL OF THE BODY CALCULATIONS:
         runCalculations(s->gb, s->sc, s->wp, *(s->num_bodies), *(s->num_craft));
 
         // unlock mutex when done :)
-        mtx_unlock(&sim_vars_mutex);
+        pthread_mutex_unlock(&sim_vars_mutex);
     }
 
-    return 0;
+    return NULL;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -103,8 +103,8 @@ int main(int argc, char* argv[]) {
     // SIM THREAD INIT                    //
     ////////////////////////////////////////
     // initialize simulation thread
-    thrd_t simThread;
-    mtx_init(&sim_vars_mutex, mtx_plain);
+    pthread_t simThread;
+    pthread_mutex_init(&sim_vars_mutex, NULL);
     
     // arguments to pass into the sim thread
     physics_sim_args ps_args = {
@@ -116,7 +116,7 @@ int main(int argc, char* argv[]) {
     };
 
     // creates the sim thread
-    if (thrd_create(&simThread, physicsSim, &ps_args) != thrd_success) {
+    if (pthread_create(&simThread, NULL, physicsSim, &ps_args) != 0) {
         displayError("ERROR", "Error when creating physics simulation process");
         return 1;
     }
@@ -133,7 +133,7 @@ int main(int argc, char* argv[]) {
         SDL_RenderClear(renderer);
 
         // lock body_sim mutex for reading
-        mtx_lock(&sim_vars_mutex);
+        pthread_mutex_lock(&sim_vars_mutex);
 
         // user input event checking logic
         SDL_Event event;
@@ -154,7 +154,7 @@ int main(int argc, char* argv[]) {
         }
 
         // unlock sim vars mutex when done
-        mtx_unlock(&sim_vars_mutex);
+        pthread_mutex_unlock(&sim_vars_mutex);
 
         // draw scale reference bar
         drawScaleBar(renderer, wp);
@@ -184,6 +184,12 @@ int main(int argc, char* argv[]) {
     ////////////////////////////////////////////////////
     // CLEAN UP                                       //
     ////////////////////////////////////////////////////
+    // wait for simulation thread to finish
+    pthread_join(simThread, NULL);
+
+    // destroy mutex
+    pthread_mutex_destroy(&sim_vars_mutex);
+
     if (gb != NULL) {
         for (int i = 0; i < num_bodies; i++) {
             free(gb[i].name);

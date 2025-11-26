@@ -690,6 +690,7 @@ void runEventCheck(SDL_Event* event, window_params_t* wp, body_properties_t** gb
         // check if x button is pressed to quit
         if (event->type == SDL_EVENT_QUIT) {
             wp->window_open = false;
+            wp->sim_running = false;
         }
         // check if mouse is moving to update hover state
         else if (event->type == SDL_EVENT_MOUSE_MOTION && event->window.windowID == wp->main_window_ID) {
