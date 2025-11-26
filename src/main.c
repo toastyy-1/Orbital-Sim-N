@@ -20,9 +20,33 @@
 // universal gravitation constant
 char* FILENAME = "planet_data.csv";
 char* SPACECRAFT_FILENAME = "spacecraft_data.csv";
+
 const double G = 6.67430E-11;
+
 TTF_Font* g_font = NULL;
 TTF_Font* g_font_small = NULL;
+
+mtx_t sim_vars_mutex;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// SIM CALCULATION FUNCTION
+////////////////////////////////////////////////////////////////////////////////////////////////////
+int physicsSim(void* args) {
+    physics_sim_args* s = (physics_sim_args*)args;
+
+    while (s->wp->sim_running) {
+        // lock mutex before accessing data
+        mtx_lock(&sim_vars_mutex);
+
+        // IMPORTANT -- DOES ALL OF THE BODY CALCULATIONS:
+        runCalculations(s->gb, s->sc, s->wp, *(s->num_bodies), *(s->num_craft));
+
+        // unlock mutex when done :)
+        mtx_unlock(&sim_vars_mutex);
+    }
+
+    return 0;
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // MAIN
@@ -53,6 +77,10 @@ int main(int argc, char* argv[]) {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
 
+    // fps counter init
+    Uint64 perf_freq = SDL_GetPerformanceFrequency();
+    Uint64 frame_start = SDL_GetPerformanceCounter();
+
     // SDL ttf font stuff
     TTF_Init();
     g_font = TTF_OpenFont("CascadiaCode.ttf", wp.font_size);
@@ -72,32 +100,45 @@ int main(int argc, char* argv[]) {
     int num_craft = 0;
     spacecraft_properties_t* sc = NULL;
 
-    // initialize planet position storage variable
-    // this variable should be used as an array of gb arrays (im sorry)
-    // ***CAREFUL!!! this variable is shared between the window and sim threads
-    body_pos_storage* b_pos_data = NULL;
-    mtx_t b_pod_data_mutex;
+    ////////////////////////////////////////
+    // SIM THREAD INIT                    //
+    ////////////////////////////////////////
+    // initialize simulation thread
+    thrd_t simThread;
+    mtx_init(&sim_vars_mutex, mtx_plain);
+    
+    // arguments to pass into the sim thread
+    physics_sim_args ps_args = {
+        .gb = &gb,
+        .sc = &sc,
+        .wp = &wp,
+        .num_bodies = &num_bodies,
+        .num_craft = &num_craft
+    };
+
+    // creates the sim thread
+    if (thrd_create(&simThread, physicsSim, &ps_args) != thrd_success) {
+        displayError("ERROR", "Error when creating physics simulation process");
+        return 1;
+    }
 
     ////////////////////////////////////////////////////////
     // simulation loop                                    //
     ////////////////////////////////////////////////////////
     while (wp.window_open) {
-        // user input event checking logic
-        SDL_Event event;
-        runEventCheck(&event, &wp, &gb, &num_bodies, &sc, &num_craft, &buttons, &dialog, &stats_window);
+        // measure frame start time
+        frame_start = SDL_GetPerformanceCounter();
 
         // clears previous frame from the screen
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
 
-        // draw scale reference bar
-        drawScaleBar(renderer, wp);
-        
-        ////////////////////////////////////////////////////
-        // START OF SIMULATION LOGIC                      //
-        ////////////////////////////////////////////////////
-        // IMPORTANT -- DOES ALL OF THE BODY CALCULATIONS:
-        runCalculations(&gb, &sc, &wp, num_bodies, num_craft);
+        // lock body_sim mutex for reading
+        mtx_lock(&sim_vars_mutex);
+
+        // user input event checking logic
+        SDL_Event event;
+        runEventCheck(&event, &wp, &gb, &num_bodies, &sc, &num_craft, &buttons, &dialog, &stats_window);
 
         // render the bodies
         body_renderOrbitBodies(renderer, gb, num_bodies, wp);
@@ -108,6 +149,14 @@ int main(int argc, char* argv[]) {
         ////////////////////////////////////////////////////
         // UI ELEMENTS                                    //
         ////////////////////////////////////////////////////
+        // render the stats window if active
+        if (stats_window.is_shown) StatsWindow_render(&stats_window, 60, 0, 0, gb, num_bodies, sc, num_craft, wp);
+
+        // unlock sim vars mutex when done
+        mtx_unlock(&sim_vars_mutex);
+
+        // draw scale reference bar
+        drawScaleBar(renderer, wp);
 
         // draw speed control button
         renderUIButtons(renderer, &buttons, &wp);
@@ -121,11 +170,12 @@ int main(int argc, char* argv[]) {
         // draw time indicator text
         renderTimeIndicators(renderer, wp);
 
-        // render the stats window if active
-        if (stats_window.is_shown) StatsWindow_render(&stats_window, 60, 0, 0, gb, num_bodies, sc, num_craft, wp);
+        // shows fps counter
+        showFPS(renderer, frame_start, perf_freq, wp);
 
         // present the renderer to the screen
         SDL_RenderPresent(renderer);
+
     }
     ////////////////////////////////////////////////////////
     // end of simulation loop                             //

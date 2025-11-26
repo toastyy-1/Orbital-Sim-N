@@ -384,6 +384,16 @@ bool isValidNumber(const char* str, double* out_value) {
     return true;
 }
 
+// shows FPS
+void showFPS(SDL_Renderer* renderer, Uint64 frame_start_timem, Uint64 perf_freq, window_params_t wp) {
+    // end frame and calculate FPS
+    Uint64 frame_end = SDL_GetPerformanceCounter();
+    double dt = (double)(frame_end - frame_start_timem) / (double)perf_freq;
+    char fps[25];
+    snprintf(fps, sizeof(fps), "%.1f FPS", 1.0 / dt);
+    SDL_WriteText(renderer, g_font, fps, wp.window_size_x * 0.01, wp.window_size_y * 0.07, TEXT_COLOR);
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // EVENT HANDLING HELPER FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -76,7 +76,9 @@ double calculateTotalSystemEnergy(body_properties_t* gb, spacecraft_properties_t
             double delta_x = gb[j].pos_x - gb[i].pos_x;
             double delta_y = gb[j].pos_y - gb[i].pos_y;
             double r = sqrt(delta_x * delta_x + delta_y * delta_y);
-            total_potential += -(G * gb[i].mass * gb[j].mass) / r;
+            if (r > 0) {  // prevent divide by zero
+                total_potential += -(G * gb[i].mass * gb[j].mass) / r;
+            }
         }
     }
 
@@ -86,7 +88,9 @@ double calculateTotalSystemEnergy(body_properties_t* gb, spacecraft_properties_t
             double delta_x = gb[j].pos_x - sc[i].pos_x;
             double delta_y = gb[j].pos_y - sc[i].pos_y;
             double r = sqrt(delta_x * delta_x + delta_y * delta_y);
-            total_potential += -(G * sc[i].current_total_mass * gb[j].mass) / r;
+            if (r > 0) {  // prevent divide by zero
+                total_potential += -(G * sc[i].current_total_mass * gb[j].mass) / r;
+            }
         }
     }
 

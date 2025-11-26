@@ -84,7 +84,11 @@ typedef struct {
 } stats_window_t;
 
 typedef struct {
-    body_properties_t* gb;
-} body_pos_storage;
+    body_properties_t** gb;
+    spacecraft_properties_t** sc;
+    window_params_t* wp;
+    int* num_bodies;
+    int* num_craft;
+} physics_sim_args;
 
 #endif
