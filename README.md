@@ -28,6 +28,10 @@ This program simulates gravitational interactions between celestial bodies using
     - **vel_x:** the "relative speed" of the body in the x direction to empty space (meters per second)
     - **vel_y:** the "relative speed" of the body in the y direction to empty space (meters per second)
   - Once this file is complete, you can run the executable file which imports data from the CSV into the simulation
+- **Import spacecraft**
+    - Edit the CSV file according to the template
+
+- *NOTE: these CSV files should be stored in the same directory as the program executable for the data to be read properly!
 
 ### Controls
 - **Space**: Pause/resume simulation
