@@ -385,19 +385,22 @@ bool isValidNumber(const char* str, double* out_value) {
 
 // shows FPS
 void showFPS(SDL_Renderer* renderer, const Uint64 frame_start_time, const Uint64 perf_freq, const window_params_t wp) {
-    const float target_frame_time = 1.0f / 30.0f; // 1/fps
+    const float target_frame_time = 1.0f / 60.0f; // 1/fps (in seconds)
+    Uint64 frame_end = SDL_GetPerformanceCounter();
+    float frame_time = (float)(frame_end - frame_start_time) / (float)perf_freq;
 
-    // end frame and calculate FPS
-    const Uint64 frame_end = SDL_GetPerformanceCounter();
-    const float frame_time = (float)(frame_end - frame_start_time) / (float)perf_freq;
+    // delay to limit FPS
+    if (frame_time < target_frame_time) {
+        SDL_Delay((Uint32)((target_frame_time - frame_time) * 1000.0f));
+    }
 
+    frame_end = SDL_GetPerformanceCounter();
+    frame_time = (float)(frame_end - frame_start_time) / (float)perf_freq;
+
+    // display the FPS
     char fps[25];
     snprintf(fps, sizeof(fps), "%.1f FPS", 1.0 / frame_time);
     SDL_WriteText(renderer, g_font, fps, wp.window_size_x * 0.01f, wp.window_size_y - 0.03f * wp.window_size_y, TEXT_COLOR);
-
-    if (frame_time < target_frame_time) {
-        SDL_Delay((Uint32)(target_frame_time - frame_time));
-    }
 }
 
 // the stats box that shows stats yay
