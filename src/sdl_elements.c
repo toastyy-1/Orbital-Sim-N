@@ -7,9 +7,10 @@
 #include <stdlib.h>
 #include "config.h"
 
-SDL_Color TEXT_COLOR = {255, 255, 255, 255};
-SDL_Color BUTTON_COLOR = {50, 50, 50, 255};
-SDL_Color BUTTON_HOVER_COLOR = {0, 0, 0, 255};
+SDL_Color TEXT_COLOR = {240, 240, 245, 255};
+SDL_Color BUTTON_COLOR = {45, 52, 70, 255};
+SDL_Color BUTTON_HOVER_COLOR = {65, 75, 100, 255};
+SDL_Color ACCENT_COLOR = {80, 150, 220, 255};
 
 // initialize the window parameters
 void init_window_params(window_params_t* wp) {
@@ -85,10 +86,10 @@ void SDL_WriteText(SDL_Renderer* renderer, TTF_Font* font, const char* text, flo
 
 // draw graph-like axes with tick marks and labels
 void drawScaleBar(SDL_Renderer* renderer, window_params_t wp) {
-    SDL_SetRenderDrawColor(renderer, 30, 30, 30, 255);
+    SDL_SetRenderDrawColor(renderer, 60, 70, 85, 255);
 
-    float axis_thickness = 1;
-    float tick_length = 10;
+    float axis_thickness = 1.5f;
+    float tick_length = 12;
     float tick_spacing_pixels = wp.window_size_x * 0.15f; // spacing between tick marks
 
     // calculate the distance each tick represents in meters
@@ -128,7 +129,7 @@ void drawScaleBar(SDL_Renderer* renderer, window_params_t wp) {
         } else {
             snprintf(label, sizeof(label), "%.0f m", distance_value);
         }
-        SDL_WriteText(renderer, g_font_small, label, tick_x - 20, wp.screen_origin_y + tick_length, (SDL_Color){90, 90, 90, 255});
+        SDL_WriteText(renderer, g_font_small, label, tick_x - 20, wp.screen_origin_y + tick_length, (SDL_Color){140, 150, 165, 255});
     }
 
     // draw tick marks and labels on Y axis
@@ -150,11 +151,11 @@ void drawScaleBar(SDL_Renderer* renderer, window_params_t wp) {
         } else {
             snprintf(label, sizeof(label), "%.0f m", distance_value);
         }
-        SDL_WriteText(renderer, g_font_small, label, wp.screen_origin_x + tick_length, tick_y - 5, (SDL_Color){90, 90, 90, 255});
+        SDL_WriteText(renderer, g_font_small, label, wp.screen_origin_x + tick_length, tick_y - 5, (SDL_Color){140, 150, 165, 255});
     }
 
     // draw origin label
-    SDL_WriteText(renderer, g_font_small, "0", wp.screen_origin_x + 5, wp.screen_origin_y + 5, (SDL_Color){90, 90, 90, 255});
+    SDL_WriteText(renderer, g_font_small, "0", wp.screen_origin_x + 5, wp.screen_origin_y + 5, (SDL_Color){140, 150, 165, 255});
 }
 
 // thing that calculates changing sim speed
@@ -186,33 +187,36 @@ void craft_renderCrafts(SDL_Renderer* renderer, const spacecraft_properties_t* s
 }
 
 void renderTimeIndicators(SDL_Renderer* renderer, window_params_t wp) {
+    float right_margin = wp.window_size_x * 0.68f;
+    float top_margin = wp.window_size_y * 0.015f;
+
     // show sim time in the top corner
     char time[32];
     if (wp.sim_time < 60) {
-        snprintf(time, sizeof(time), "Sim time: %.f s", wp.sim_time); // sim time in seconds
+        snprintf(time, sizeof(time), "Time: %.f s", wp.sim_time); // sim time in seconds
     }
     else if (wp.sim_time > 60 && wp.sim_time < 3600) {
-        snprintf(time, sizeof(time), "Sim time: %.f mins", wp.sim_time/60); // sim time in minutes
+        snprintf(time, sizeof(time), "Time: %.f mins", wp.sim_time/60); // sim time in minutes
     }
     else if (wp.sim_time > 3600 && wp.sim_time < 86400) {
-        snprintf(time, sizeof(time), "Sim time: %.1f hrs", wp.sim_time/3600); // sim time in hours
+        snprintf(time, sizeof(time), "Time: %.1f hrs", wp.sim_time/3600); // sim time in hours
     }
     else {
-        snprintf(time, sizeof(time), "Sim time: %.1f days", wp.sim_time/86400); // sim time in days
+        snprintf(time, sizeof(time), "Time: %.1f days", wp.sim_time/86400); // sim time in days
     }
-    SDL_WriteText(renderer, g_font, time, wp.window_size_x * 0.75f, wp.window_size_y * 0.04f, TEXT_COLOR);
+    SDL_WriteText(renderer, g_font, time, right_margin, top_margin + wp.font_size * 1.2f, TEXT_COLOR);
 
     // show paused indication
-    if (wp.sim_running) SDL_WriteText(renderer, g_font, "Sim Running...", wp.window_size_x * 0.75f, wp.window_size_y * 0.015f, TEXT_COLOR);
-    else SDL_WriteText(renderer, g_font, "Sim Paused", wp.window_size_x * 0.75f, wp.window_size_y * 0.015f, TEXT_COLOR);
+    SDL_Color status_color = wp.sim_running ? (SDL_Color){120, 220, 140, 255} : (SDL_Color){240, 140, 120, 255};
+    const char* status_text = wp.sim_running ? "Running" : "Paused";
+    SDL_WriteText(renderer, g_font, status_text, right_margin, top_margin, status_color);
 
 }
 
 // generic button renderer
-void renderButton(SDL_Renderer* renderer, const button_t* button, const char* text, window_params_t wp) {
+void renderButton(SDL_Renderer* renderer, const button_t* button, const char* text) {
     // set background color based on hover state
     SDL_Color bg_color = button->is_hovered ? button->hover_color : button->normal_color;
-    SDL_SetRenderDrawColor(renderer, bg_color.r, bg_color.g, bg_color.b, bg_color.a);
 
     // draw button background
     SDL_FRect bg_rect = {
@@ -221,55 +225,73 @@ void renderButton(SDL_Renderer* renderer, const button_t* button, const char* te
         (float)button->width,
         (float)button->height
     };
+    SDL_SetRenderDrawColor(renderer, bg_color.r, bg_color.g, bg_color.b, bg_color.a);
     SDL_RenderFillRect(renderer, &bg_rect);
 
     // center text in button
-    float padding_x = wp.window_size_x * 0.01f;
-    float padding_y = wp.window_size_y * 0.01f;
-    SDL_WriteText(renderer, g_font, text, button->x + padding_x, button->y + padding_y, TEXT_COLOR);
+    if (g_font && text) {
+        SDL_Surface* text_surface = TTF_RenderText_Blended(g_font, text, 0, TEXT_COLOR);
+        if (text_surface) {
+            float text_x = button->x + (button->width - (float)text_surface->w) / 2.0f;
+            float text_y = button->y + (button->height - (float)text_surface->h) / 2.0f;
+
+            SDL_Texture* text_texture = SDL_CreateTextureFromSurface(renderer, text_surface);
+            if (text_texture) {
+                SDL_FRect text_rect = {text_x, text_y, (float)text_surface->w, (float)text_surface->h};
+                SDL_RenderTexture(renderer, text_texture, NULL, &text_rect);
+                SDL_DestroyTexture(text_texture);
+            }
+            SDL_DestroySurface(text_surface);
+        }
+    }
 }
 
 // initializes all button properties based on window parameters
-void initButtons(button_storage_t* buttons, window_params_t wp) {
-    // speed control button
+void initButtons(button_storage_t* buttons, const window_params_t wp) {
+    float margin = wp.window_size_x * 0.015f;
+    float button_spacing = wp.window_size_y * 0.01f;
+    float button_height = wp.window_size_y * 0.045f;
+    float side_button_width = wp.window_size_x * 0.14f;
+
+    // speed control button (top left)
     buttons->sc_button = (button_t){
-        .x = wp.window_size_x * 0.01f,
-        .y = wp.window_size_y * 0.007f,
-        .width = wp.window_size_x * 0.25f,
-        .height = wp.window_size_y * 0.04f,
+        .x = margin,
+        .y = margin,
+        .width = wp.window_size_x * 0.22f,
+        .height = button_height,
         .is_hovered = false,
         .normal_color = BUTTON_COLOR,
         .hover_color = BUTTON_HOVER_COLOR
     };
 
-    // csv loading button
+    // csv loading button (bottom right)
     buttons->csv_load_button = (button_t){
-        .width = wp.window_size_x * 0.12f,
-        .height = wp.window_size_y * 0.04f,
-        .x = wp.window_size_x - wp.window_size_x * 0.12f - 10.0f,
-        .y = wp.window_size_y - wp.window_size_y * 0.04f - 10.0f,
+        .width = side_button_width,
+        .height = button_height,
+        .x = wp.window_size_x - side_button_width - margin,
+        .y = wp.window_size_y - button_height - margin,
         .is_hovered = false,
         .normal_color = BUTTON_COLOR,
         .hover_color = BUTTON_HOVER_COLOR
     };
 
-    // add body button
+    // add body button (above csv button)
     buttons->add_body_button = (button_t){
         .x = buttons->csv_load_button.x,
-        .y = buttons->csv_load_button.y - buttons->csv_load_button.height,
-        .width = buttons->csv_load_button.width,
-        .height = buttons->csv_load_button.height,
+        .y = buttons->csv_load_button.y - button_height - button_spacing,
+        .width = side_button_width,
+        .height = button_height,
         .is_hovered = false,
         .normal_color = BUTTON_COLOR,
         .hover_color = BUTTON_HOVER_COLOR
     };
 
-    // show stats window button
+    // show stats window button (above add body button)
     buttons->show_stats_button = (button_t){
         .x = buttons->add_body_button.x,
-        .y = buttons->add_body_button.y - buttons->add_body_button.height,
-        .width = buttons->add_body_button.width,
-        .height = buttons->add_body_button.height,
+        .y = buttons->add_body_button.y - button_height - button_spacing,
+        .width = side_button_width,
+        .height = button_height,
         .is_hovered = false,
         .normal_color = BUTTON_COLOR,
         .hover_color = BUTTON_HOVER_COLOR
@@ -283,37 +305,33 @@ void renderUIButtons(SDL_Renderer* renderer, const button_storage_t* buttons, co
     // speed control button
     char speed_text[32];
     snprintf(speed_text, sizeof(speed_text), "Time Step: %.2f s", wp->time_step);
-    renderButton(renderer, &buttons->sc_button, speed_text, *wp);
+    renderButton(renderer, &buttons->sc_button, speed_text);
 
     // csv loading button
-    renderButton(renderer, &buttons->csv_load_button, "Load CSV", *wp);
+    renderButton(renderer, &buttons->csv_load_button, "Load CSV");
 
     // add orbital body button
-    renderButton(renderer, &buttons->add_body_button, "Add Body", *wp);
+    renderButton(renderer, &buttons->add_body_button, "Add Body");
 
     // show stats window button
-    renderButton(renderer, &buttons->show_stats_button, "Stats", *wp);
+    renderButton(renderer, &buttons->show_stats_button, "Stats");
 }
 
 // renders the text input dialog box
 void renderBodyTextInputDialog(SDL_Renderer* renderer, text_input_dialog_t* dialog, window_params_t wp) {
     if (!dialog->active) return;
-    // background overlay
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-    SDL_FRect overlay = {0, 0, (float)wp.window_size_x, (float)wp.window_size_y};
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 200);
+    const SDL_FRect overlay = {0, 0, (float)wp.window_size_x, (float)wp.window_size_y};
     SDL_RenderFillRect(renderer, &overlay);
     // dialog box dimensions
-    float dialog_width = wp.window_size_x * 0.5f;
-    float dialog_height = wp.window_size_y * 0.3f;
-    float dialog_x = (wp.window_size_x - dialog_width) / 2.0f;
-    float dialog_y = (wp.window_size_y - dialog_height) / 2.0f;
+    const float dialog_width = wp.window_size_x * 0.45f;
+    const float dialog_height = wp.window_size_y * 0.28f;
+    const float dialog_x = (wp.window_size_x - dialog_width) / 2.0f;
+    const float dialog_y = (wp.window_size_y - dialog_height) / 2.0f;
     // draw dialog background
-    SDL_SetRenderDrawColor(renderer, 40, 40, 40, 255);
-    SDL_FRect dialog_bg = {(float)dialog_x, (float)dialog_y, (float)dialog_width, (float)dialog_height};
+    SDL_SetRenderDrawColor(renderer, 35, 40, 55, 255);
+    const SDL_FRect dialog_bg = {(float)dialog_x, (float)dialog_y, (float)dialog_width, (float)dialog_height};
     SDL_RenderFillRect(renderer, &dialog_bg);
-    // draw dialog border
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    SDL_RenderRect(renderer, &dialog_bg);
 
     // determine prompt text based on current state
     const char* prompt_text;
@@ -328,18 +346,26 @@ void renderBodyTextInputDialog(SDL_Renderer* renderer, text_input_dialog_t* dial
     }
 
     // render prompt text
-    float text_x = dialog_x + dialog_width * 0.1f;
-    float text_y = dialog_y + dialog_height * 0.2f;
-    SDL_WriteText(renderer, g_font, prompt_text, text_x, text_y, (SDL_Color){255, 255, 255, 255});
+    const float text_x = dialog_x + dialog_width * 0.08f;
+    const float text_y = dialog_y + dialog_height * 0.18f;
+    SDL_WriteText(renderer, g_font, prompt_text, text_x, text_y, TEXT_COLOR);
+
+    // render input field background
+    const float input_y = text_y + wp.font_size * 1.3f;
+    const SDL_FRect input_bg = {text_x - 5, input_y - 3, dialog_width * 0.84f, wp.font_size * 1.4f};
+    SDL_SetRenderDrawColor(renderer, 25, 30, 42, 255);
+    SDL_RenderFillRect(renderer, &input_bg);
+    SDL_SetRenderDrawColor(renderer, ACCENT_COLOR.r, ACCENT_COLOR.g, ACCENT_COLOR.b, 180);
+    SDL_RenderRect(renderer, &input_bg);
 
     // render current input with cursor
     char display_buffer[300];
     snprintf(display_buffer, sizeof(display_buffer), "%s_", dialog->input_buffer);
-    SDL_WriteText(renderer, g_font, display_buffer, text_x, text_y + wp.font_size * 1.5f, (SDL_Color){200, 100, 200, 255});
+    SDL_WriteText(renderer, g_font, display_buffer, text_x, input_y, ACCENT_COLOR);
 
     // render instruction text
     const char* instruction = "Press Enter to continue | ESC to cancel";
-    SDL_WriteText(renderer, g_font, instruction, text_x, text_y + wp.font_size * 3.5f, (SDL_Color){180, 180, 180, 255});
+    SDL_WriteText(renderer, g_font_small, instruction, text_x, text_y + wp.font_size * 3.8f, (SDL_Color){160, 170, 185, 255});
 }
 
 // show error window
@@ -403,16 +429,18 @@ void showFPS(SDL_Renderer* renderer, const Uint64 frame_start_time, const Uint64
     frame_time = (float)(frame_end - frame_start_time) / (float)perf_freq;
 
     // display the FPS
+    const float fps_value = 1.0f / frame_time;
     char fps[25];
-    snprintf(fps, sizeof(fps), "%.1f FPS", 1.0 / frame_time);
-    SDL_WriteText(renderer, g_font, fps, wp.window_size_x * 0.01f, wp.window_size_y - 0.03f * wp.window_size_y, TEXT_COLOR);
+    snprintf(fps, sizeof(fps), "%.1f FPS", fps_value);
+    const SDL_Color fps_color = fps_value >= 55.0f ? (SDL_Color){120, 220, 140, 255} : (SDL_Color){240, 200, 120, 255};
+    SDL_WriteText(renderer, g_font_small, fps, wp.window_size_x * 0.015f, wp.window_size_y - wp.font_size * 1.8f, fps_color);
 }
 
 // the stats box that shows stats yay
 void renderStatsBox(SDL_Renderer* renderer, body_properties_t* bodies, const int num_bodies, const spacecraft_properties_t* sc, const int num_craft, window_params_t wp, stats_window_t* stats_window) {
     const float margin_x    = (wp.window_size_x * 0.02f);
-    const float top_y       = (wp.window_size_y * 0.07f);
-    const float line_height = (wp.window_size_y * 0.02f);
+    const float top_y       = (wp.window_size_y * 0.1f);
+    const float line_height = (wp.window_size_y * 0.025f);
 
     if (!bodies || num_bodies == 0) return;
 
@@ -421,24 +449,24 @@ void renderStatsBox(SDL_Renderer* renderer, body_properties_t* bodies, const int
     // velocities
     for (int i = 0; i < num_bodies; i++) {
         char vel_text[64];
-        snprintf(vel_text, sizeof(vel_text), "Vel of %s: %.2e m/s", bodies[i].name, bodies[i].vel);
-        SDL_WriteText(renderer, g_font, vel_text, margin_x, y, TEXT_COLOR);
+        snprintf(vel_text, sizeof(vel_text), "Vel %s: %.2e m/s", bodies[i].name, bodies[i].vel);
+        SDL_WriteText(renderer, g_font_small, vel_text, margin_x, y, (SDL_Color){180, 190, 210, 255});
         y += line_height;
     }
 
     // kinetic energies
     for (int i = 0; i < num_bodies; i++) {
         char ke_text[64];
-        snprintf(ke_text, sizeof(ke_text), "KE of %s: %.2e J", bodies[i].name, bodies[i].kinetic_energy);
-        SDL_WriteText(renderer, g_font, ke_text, margin_x, y, TEXT_COLOR);
+        snprintf(ke_text, sizeof(ke_text), "KE %s: %.2e J", bodies[i].name, bodies[i].kinetic_energy);
+        SDL_WriteText(renderer, g_font_small, ke_text, margin_x, y, (SDL_Color){180, 190, 210, 255});
         y += line_height;
     }
 
     // total system energy
     double total_energy = calculateTotalSystemEnergy(bodies, sc, num_bodies, num_craft);
     char total_energy_text[64];
-    snprintf(total_energy_text, sizeof(total_energy_text), "Total System Energy: %.2e J", total_energy);
-    SDL_WriteText(renderer, g_font, total_energy_text, margin_x, y, TEXT_COLOR);
+    snprintf(total_energy_text, sizeof(total_energy_text), "Total Energy: %.2e J", total_energy);
+    SDL_WriteText(renderer, g_font_small, total_energy_text, margin_x, y, ACCENT_COLOR);
     y += line_height;
 
     // total error - measure initial energy on first call or when explicitly reset
@@ -448,8 +476,9 @@ void renderStatsBox(SDL_Renderer* renderer, body_properties_t* bodies, const int
     }
     double error = (stats_window->initial_total_energy != 0) ? fabs(stats_window->initial_total_energy - total_energy) / fabs(stats_window->initial_total_energy) * 100.0 : 0.0;
     char error_text[64];
-    snprintf(error_text, sizeof(error_text), "Energy Error: %.4f%%", error);
-    SDL_WriteText(renderer, g_font, error_text, margin_x, y, TEXT_COLOR);
+    snprintf(error_text, sizeof(error_text), "Error: %.4f%%", error);
+    SDL_Color error_color = error < 0.1 ? (SDL_Color){120, 220, 140, 255} : (SDL_Color){240, 200, 120, 255};
+    SDL_WriteText(renderer, g_font_small, error_text, margin_x, y, error_color);
 }
 
 
