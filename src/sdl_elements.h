@@ -50,11 +50,11 @@ void SDL_RenderFillCircle(SDL_Renderer* renderer, float centerX, float centerY, 
 void drawScaleBar(SDL_Renderer* renderer, window_params_t wp);
 bool isMouseInRect(int mouse_x, int mouse_y, int rect_x, int rect_y, int rect_w, int rect_h);
 void body_renderOrbitBodies(SDL_Renderer* renderer, body_properties_t* gb, int num_bodies, window_params_t wp);
-void craft_renderCrafts(SDL_Renderer* renderer, spacecraft_properties_t* sc, int num_craft, window_params_t wp);
+void craft_renderCrafts(SDL_Renderer* renderer, const spacecraft_properties_t* sc, int num_craft);
 void renderTimeIndicators(SDL_Renderer* renderer, window_params_t wp);
 void SDL_WriteText(SDL_Renderer* renderer, TTF_Font* font, const char* text, float x, float y, SDL_Color color);
-void renderButton(SDL_Renderer* renderer, button_t* button, const char* text, window_params_t wp);
-void renderUIButtons(SDL_Renderer* renderer, button_storage_t* buttons, window_params_t* wp);
+void renderButton(SDL_Renderer* renderer, const button_t* button, const char* text, window_params_t wp);
+void renderUIButtons(SDL_Renderer* renderer, const button_storage_t* buttons, const window_params_t* wp);
 void initButtons(button_storage_t* buttons, window_params_t wp);
 void init_window_params(window_params_t* wp);
 void init_text_dialog(text_input_dialog_t* dialog);

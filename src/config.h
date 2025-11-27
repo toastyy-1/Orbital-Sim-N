@@ -36,7 +36,7 @@ typedef struct {
     double vel;
     double acc_x;
     double acc_y;
-    double acc_x_prev; // previous acceleration for Verlet integration
+    double acc_x_prev; // previous acceleration for verlet integration
     double acc_y_prev;
     double force_x; // the forces acting on such body
     double force_y;

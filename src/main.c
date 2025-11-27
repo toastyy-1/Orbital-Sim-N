@@ -36,7 +36,7 @@ void* physicsSim(void* args) {
         // lock mutex before accessing data
         pthread_mutex_lock(&sim_vars_mutex);
 
-        // IMPORTANT -- DOES ALL OF THE BODY CALCULATIONS:
+        // IMPORTANT -- DOES ALL BODY CALCULATIONS:
         runCalculations(s->gb, s->sc, s->wp, *(s->num_bodies), *(s->num_craft));
 
         // unlock mutex when done :)
@@ -49,7 +49,7 @@ void* physicsSim(void* args) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // MAIN
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-int main(int argc, char* argv[]) {
+int main() {
     ////////////////////////////////////////
     // INIT                               //
     ////////////////////////////////////////
@@ -77,7 +77,7 @@ int main(int argc, char* argv[]) {
 
     // fps counter init
     Uint64 perf_freq = SDL_GetPerformanceFrequency();
-    Uint64 frame_start = SDL_GetPerformanceCounter();
+    Uint64 frame_start;
 
     // SDL ttf font stuff
     TTF_Init();
@@ -86,7 +86,6 @@ int main(int argc, char* argv[]) {
 
     // toggleable stats window
     stats_window_t stats_window = {0};
-    SDL_Color white_text = {255, 255, 255, 255};
 
     ////////////////////////////////////////
     // SIM VARS                           //
@@ -142,7 +141,7 @@ int main(int argc, char* argv[]) {
         body_renderOrbitBodies(renderer, gb, num_bodies, wp);
 
         // render the spacecraft
-        craft_renderCrafts(renderer, sc, num_craft, wp);
+        craft_renderCrafts(renderer, sc, num_craft);
 
         ////////////////////////////////////////////////////
         // UI ELEMENTS                                    //
@@ -160,9 +159,6 @@ int main(int argc, char* argv[]) {
 
         // draw speed control button
         renderUIButtons(renderer, &buttons, &wp);
-
-        // help text at the bottom
-        SDL_WriteText(renderer, g_font, "Space: pause/resume | R: Reset", wp.window_size_x * 0.4f, wp.window_size_y - wp.window_size_x * 0.02f - wp.font_size, white_text);
 
         // render text input dialog if active
         renderBodyTextInputDialog(renderer, &dialog, wp);

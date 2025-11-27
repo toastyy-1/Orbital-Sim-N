@@ -5,6 +5,7 @@
 #include "config.h"
 #include "sdl_elements.h"
 #include <stdio.h>
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include <cjson/cJSON.h>
@@ -58,7 +59,7 @@ void body_calculateKineticEnergy(body_properties_t *b) {
 
 // calculate total system energy for all bodies
 // this avoids double-counting by only calculating each pair interaction once
-double calculateTotalSystemEnergy(body_properties_t* gb, spacecraft_properties_t* sc, int num_bodies, int num_craft) {
+double calculateTotalSystemEnergy(const body_properties_t* gb, const spacecraft_properties_t* sc, const int num_bodies, const int num_craft) {
     double total_kinetic = 0.0;
     double total_potential = 0.0;
 
@@ -113,8 +114,7 @@ float body_calculateVisualRadius(body_properties_t* body, window_params_t wp) {
 }
 
 // function to add a new body to the system
-void body_addOrbitalBody(body_properties_t** gb, int* num_bodies, char* name, double mass, double x_pos, double y_pos, double x_vel, double y_vel) {
-
+void body_addOrbitalBody(body_properties_t** gb, int* num_bodies, const char* name, const double mass, const double x_pos, const double y_pos, const double x_vel, const double y_vel) {
     // reallocate memory for the new body
     *gb = (body_properties_t *)realloc(*gb, (*num_bodies + 1) * sizeof(body_properties_t));
 
@@ -232,12 +232,12 @@ void craft_updateMotion(spacecraft_properties_t* s, double dt) {
 }
 
 // adds a spacecraft to the spacecraft array
-void craft_addSpacecraft(spacecraft_properties_t** sc, int* num_craft, char* name,
-                        double x_pos, double y_pos, double x_vel, double y_vel,
-                        double dry_mass, double fuel_mass, double thrust,
-                        double specific_impulse, double mass_flow_rate,
-                        double burn_start_time, double burn_duration, 
-                        double burn_heading, double burn_throttle) {
+void craft_addSpacecraft(spacecraft_properties_t** sc, int* num_craft, const char* name,
+                        const double x_pos, const double y_pos, const double x_vel, const double y_vel,
+                        const double dry_mass, const double fuel_mass, const double thrust,
+                        const double specific_impulse, const double mass_flow_rate,
+                        const double burn_start_time, const double burn_duration,
+                        const double burn_heading, const double burn_throttle) {
     // reallocate memory for the new spacecraft
     *sc = (spacecraft_properties_t *)realloc(*sc, (*num_craft + 1) * sizeof(spacecraft_properties_t));
 
@@ -326,18 +326,15 @@ void resetSim(double* sim_time, body_properties_t** gb, int* num_bodies, spacecr
 }
 
 // calculate the optimum velocity for an object to orbit a given body based on the orbit radius
-// (funciton does not exist yet)
+// (function does not exist yet)
 
 // json handling logic for reading json files
-void readBodyJSON(char* FILENAME, body_properties_t** gb, int* num_bodies) {
-    FILE *fp = NULL;
-    if (fopen_s(&fp, FILENAME, "r") != 0) {
-        // error handling does nothing, im just doing this so I dont piss off the warnings
-    }
+void readBodyJSON(const char* FILENAME, body_properties_t** gb, int* num_bodies) {
+    FILE *fp = fopen(FILENAME, "r");
 
     // read entire file into buffer
     fseek(fp, 0, SEEK_END);
-    long file_size = ftell(fp);
+    const long file_size = ftell(fp);
     fseek(fp, 0, SEEK_SET);
 
     char* json_buffer = (char*)malloc(file_size + 1);
@@ -376,15 +373,12 @@ void readBodyJSON(char* FILENAME, body_properties_t** gb, int* num_bodies) {
     cJSON_Delete(json);
 }
 
-void readSpacecraftJSON(char* FILENAME, spacecraft_properties_t** sc, int* num_craft) {
-    FILE *fp = NULL;
-    if (fopen_s(&fp, FILENAME, "r") != 0) {
-        // error handling does nothing, im just doing this so I dont piss off the warnings
-    }
+void readSpacecraftJSON(const char* FILENAME, spacecraft_properties_t** sc, int* num_craft) {
+    FILE *fp = fopen(FILENAME, "r");
 
     // read entire file into buffer
     fseek(fp, 0, SEEK_END);
-    long file_size = ftell(fp);
+    const long file_size = ftell(fp);
     fseek(fp, 0, SEEK_SET);
 
     char* json_buffer = (char*)malloc(file_size + 1);
@@ -465,7 +459,7 @@ void runCalculations(body_properties_t** gb, spacecraft_properties_t** sc, windo
 
             // update the motion for each body and draw
             for (int i = 0; i < num_bodies; i++) {
-                // updates the kinematic properties of each body (velocity, accelertion, position, etc)
+                // updates the kinematic properties of each body (velocity, acceleration, position, etc.)
                 body_updateMotion(&(*gb)[i], wp->time_step);
                 // transform real-space coordinate to pixel coordinates on screen (scaling)
                 body_transformCoordinates(&(*gb)[i], *wp);
@@ -495,7 +489,7 @@ void runCalculations(body_properties_t** gb, spacecraft_properties_t** sc, windo
 
             // update the motion for each craft and draw
             for (int i = 0; i < num_craft; i++) {
-                // updates the kinematic properties of each body (velocity, accelertion, position, etc)
+                // updates the kinematic properties of each body (velocity, acceleration, position, etc.)
                 craft_updateMotion(&(*sc)[i], wp->time_step);
                 // transform real-space coordinate to pixel coordinates on screen (scaling)
                 craft_transformCoordinates(&(*sc)[i], *wp);

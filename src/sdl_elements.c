@@ -1,7 +1,7 @@
 #include "sdl_elements.h"
 #include "sim_calculations.h"
 #include <errno.h>
-#include <stdio.h>
+#include <math.h>
 #include <string.h>
 #include <stdlib.h>
 #include "config.h"
@@ -169,7 +169,7 @@ void body_renderOrbitBodies(SDL_Renderer* renderer, body_properties_t* gb, int n
     }
 }
 
-void craft_renderCrafts(SDL_Renderer* renderer, spacecraft_properties_t* sc, int num_craft, window_params_t wp) {
+void craft_renderCrafts(SDL_Renderer* renderer, const spacecraft_properties_t* sc, const int num_craft) {
     SDL_SetRenderDrawColor(renderer, 255, 100, 100, 255); // reddish color for spacecraft
     for (int i = 0; i < num_craft; i++) {
         if (sc[i].engine_on) SDL_SetRenderDrawColor(renderer, 255, 190, 190, 255);
@@ -204,7 +204,7 @@ void renderTimeIndicators(SDL_Renderer* renderer, window_params_t wp) {
 }
 
 // generic button renderer
-void renderButton(SDL_Renderer* renderer, button_t* button, const char* text, window_params_t wp) {
+void renderButton(SDL_Renderer* renderer, const button_t* button, const char* text, window_params_t wp) {
     // set background color based on hover state
     SDL_Color bg_color = button->is_hovered ? button->hover_color : button->normal_color;
     SDL_SetRenderDrawColor(renderer, bg_color.r, bg_color.g, bg_color.b, bg_color.a);
@@ -274,7 +274,7 @@ void initButtons(button_storage_t* buttons, window_params_t wp) {
 // renders all the buttons on the screen, this function holds all button drawing logic
 // remember: you must add this button to the event handling logic for it to work!!!
 // remember: you must add each button to the button_storage_t struct!
-void renderUIButtons(SDL_Renderer* renderer, button_storage_t* buttons, window_params_t* wp) {
+void renderUIButtons(SDL_Renderer* renderer, const button_storage_t* buttons, const window_params_t* wp) {
     // speed control button
     char speed_text[32];
     snprintf(speed_text, sizeof(speed_text), "Time Step: %.2f s", wp->time_step);
@@ -442,12 +442,12 @@ void renderStatsBox(SDL_Renderer* renderer, body_properties_t* bodies, int num_b
 // EVENT HANDLING HELPER FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // handles text input dialog events
-static bool handleTextInputDialogEvent(SDL_Event* event, window_params_t* wp, text_input_dialog_t* dialog, body_properties_t** gb, int* num_bodies) {
+static bool handleTextInputDialogEvent(const SDL_Event* event, const window_params_t* wp, text_input_dialog_t* dialog, body_properties_t** gb, int* num_bodies) {
     if (event->type == SDL_EVENT_TEXT_INPUT && event->window.windowID == wp->main_window_ID) {
         // append character to input buffer
         size_t len = strlen(dialog->input_buffer);
         if (len < sizeof(dialog->input_buffer) - 1) {
-            strncat_s(dialog->input_buffer, sizeof(dialog->input_buffer), event->text.text, sizeof(dialog->input_buffer) - len - 1);
+            strncat(dialog->input_buffer, event->text.text, sizeof(dialog->input_buffer) - len - 1);
         }
         return true;
     }
@@ -465,7 +465,7 @@ static bool handleTextInputDialogEvent(SDL_Event* event, window_params_t* wp, te
                         displayError("Invalid Input", "Name cannot be empty");
                         break;
                     }
-                strncpy_s(dialog->name, sizeof(dialog->name), dialog->input_buffer, sizeof(dialog->name) - 1);
+                strncpy(dialog->name, dialog->input_buffer, sizeof(dialog->name) - 1);
                     dialog->state = INPUT_MASS;
                     break;
                 case INPUT_MASS: {
@@ -548,7 +548,7 @@ static bool handleTextInputDialogEvent(SDL_Event* event, window_params_t* wp, te
 }
 
 // handles mouse motion events (dragging and button hover states)
-static void handleMouseMotionEvent(SDL_Event* event, window_params_t* wp, button_storage_t* buttons) {
+static void handleMouseMotionEvent(const SDL_Event* event, window_params_t* wp, button_storage_t* buttons) {
     int mouse_x = (int)event->motion.x;
     int mouse_y = (int)event->motion.y;
 
@@ -568,7 +568,7 @@ static void handleMouseMotionEvent(SDL_Event* event, window_params_t* wp, button
     buttons->csv_load_button.is_hovered = isMouseInRect(mouse_x, mouse_y,
         (int)buttons->csv_load_button.x, (int)buttons->csv_load_button.y,
         (int)buttons->csv_load_button.width, (int)buttons->csv_load_button.height);
-    // update hover state for add body button'
+    // update hover state for add body button
     buttons->add_body_button.is_hovered = isMouseInRect(mouse_x, mouse_y,
         (int)buttons->add_body_button.x, (int)buttons->add_body_button.y,
         (int)buttons->add_body_button.width, (int)buttons->add_body_button.height);
@@ -579,7 +579,7 @@ static void handleMouseMotionEvent(SDL_Event* event, window_params_t* wp, button
 }
 
 // handles mouse button down events (button clicks and drag start)
-static void handleMouseButtonDownEvent(SDL_Event* event, window_params_t* wp, body_properties_t** gb, int* num_bodies, spacecraft_properties_t** sc, int* num_craft, button_storage_t* buttons, text_input_dialog_t* dialog, stats_window_t* stats_window) {
+static void handleMouseButtonDownEvent(const SDL_Event* event, window_params_t* wp, body_properties_t** gb, int* num_bodies, spacecraft_properties_t** sc, int* num_craft, const button_storage_t* buttons, text_input_dialog_t* dialog, stats_window_t* stats_window) {
     // check if right mouse button or middle mouse button (for dragging)
     if (event->button.button == SDL_BUTTON_RIGHT || event->button.button == SDL_BUTTON_MIDDLE) {
         wp->is_dragging = true;
@@ -611,14 +611,14 @@ static void handleMouseButtonDownEvent(SDL_Event* event, window_params_t* wp, bo
 }
 
 // handles mouse button release events
-static void handleMouseButtonUpEvent(SDL_Event* event, window_params_t* wp) {
+static void handleMouseButtonUpEvent(const SDL_Event* event, window_params_t* wp) {
     if (event->button.button == SDL_BUTTON_RIGHT || event->button.button == SDL_BUTTON_MIDDLE) {
         wp->is_dragging = false;
     }
 }
 
 // handles mouse wheel events (zooming and speed control)
-static void handleMouseWheelEvent(SDL_Event* event, window_params_t* wp, button_storage_t* buttons) {
+static void handleMouseWheelEvent(const SDL_Event* event, window_params_t* wp, const button_storage_t* buttons) {
     int mouse_x = (int)event->wheel.mouse_x;
     int mouse_y = (int)event->wheel.mouse_y;
 
@@ -643,7 +643,7 @@ static void handleMouseWheelEvent(SDL_Event* event, window_params_t* wp, button_
 }
 
 // handles keyboard events (pause/play, reset)
-static void handleKeyboardEvent(SDL_Event* event, window_params_t* wp, body_properties_t** gb, int* num_bodies, spacecraft_properties_t** sc, int* num_craft) {
+static void handleKeyboardEvent(const SDL_Event* event, window_params_t* wp, body_properties_t** gb, int* num_bodies, spacecraft_properties_t** sc, int* num_craft) {
     if(event->key.key == SDLK_SPACE) {
         if (wp->sim_running == false) {
             wp->sim_running = true;
@@ -658,7 +658,7 @@ static void handleKeyboardEvent(SDL_Event* event, window_params_t* wp, body_prop
 }
 
 // handles window resize events
-static void handleWindowResizeEvent(SDL_Event* event, window_params_t* wp, button_storage_t* buttons) {
+static void handleWindowResizeEvent(const SDL_Event* event, window_params_t* wp, button_storage_t* buttons) {
     wp->window_size_x = (float)event->window.data1;
     wp->window_size_y = (float)event->window.data2;
     wp->screen_origin_x = wp->window_size_x / 2;
