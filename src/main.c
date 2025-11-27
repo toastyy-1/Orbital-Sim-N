@@ -29,16 +29,17 @@ pthread_mutex_t sim_vars_mutex;
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void* physicsSim(void* args) {
     const physics_sim_args* s = (physics_sim_args*)args;
+    while (s->wp->window_open) {
+        while (s->wp->sim_running) {
+            // lock mutex before accessing data
+            pthread_mutex_lock(&sim_vars_mutex);
 
-    while (s->wp->sim_running) {
-        // lock mutex before accessing data
-        pthread_mutex_lock(&sim_vars_mutex);
+            // IMPORTANT -- DOES ALL BODY CALCULATIONS:
+            runCalculations(s->gb, s->sc, s->wp, *(s->num_bodies), *(s->num_craft));
 
-        // IMPORTANT -- DOES ALL BODY CALCULATIONS:
-        runCalculations(s->gb, s->sc, s->wp, *(s->num_bodies), *(s->num_craft));
-
-        // unlock mutex when done :)
-        pthread_mutex_unlock(&sim_vars_mutex);
+            // unlock mutex when done :)
+            pthread_mutex_unlock(&sim_vars_mutex);
+        }
     }
 
     return NULL;
@@ -53,7 +54,9 @@ int main(int argc, char *argv[]) {
     ////////////////////////////////////////
     // INIT                               //
     ////////////////////////////////////////
-    // initialize simulation parameters
+
+    // initialize window parameters
+    SDL_Init(SDL_INIT_VIDEO);
     window_params_t wp = {0};
     init_window_params(&wp);
 
@@ -65,8 +68,7 @@ int main(int argc, char *argv[]) {
     text_input_dialog_t dialog = {0};
     init_text_dialog(&dialog);
 
-    // initialize SDL3
-    SDL_Init(SDL_INIT_VIDEO);
+    // initialize SDL3 window
     // create an SDL window
     SDL_Window* window = SDL_CreateWindow("Orbit Simulation", (int)wp.window_size_x, (int)wp.window_size_y, SDL_WINDOW_RESIZABLE);
     wp.main_window_ID = SDL_GetWindowID(window);

@@ -5,6 +5,7 @@
 #include <SDL3/SDL.h>
 
 typedef struct {
+    int screen_width, screen_height;
     double time_step;
     float window_size_x, window_size_y;
     float screen_origin_x, screen_origin_y;

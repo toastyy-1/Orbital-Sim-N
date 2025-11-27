@@ -13,9 +13,13 @@ SDL_Color BUTTON_HOVER_COLOR = {0, 0, 0, 255};
 
 // initialize the window parameters
 void init_window_params(window_params_t* wp) {
+    // gets screen width and height parameters from computer
+    const SDL_DisplayMode *mode = SDL_GetCurrentDisplayMode(SDL_GetPrimaryDisplay());
+
     wp->time_step = 1;
-    wp->window_size_x = 1000;
-    wp->window_size_y = 1000;
+    // sets the default window size scaled based on the user's screen size
+    wp->window_size_x = (float)mode->w * (2.0f/3.0f);
+    wp->window_size_y = (float)mode->h * (2.0f/3.0f);
     wp->screen_origin_x = wp->window_size_x / 2;
     wp->screen_origin_y = wp->window_size_y / 2;
     wp->meters_per_pixel = 100000;
