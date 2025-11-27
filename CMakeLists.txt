@@ -2,18 +2,27 @@ cmake_minimum_required(VERSION 3.20)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(CMAKE_TOOLCHAIN_FILE "C:/vcpkg/scripts/buildsystems/vcpkg.cmake")
+# Only use vcpkg on Windows
+if(WIN32)
+    set(CMAKE_TOOLCHAIN_FILE "C:/vcpkg/scripts/buildsystems/vcpkg.cmake")
 
-# Set vcpkg target triplet if not already set
-if(NOT DEFINED VCPKG_TARGET_TRIPLET)
-    set(VCPKG_TARGET_TRIPLET "x64-windows")
+    # Set vcpkg target triplet if not already set
+    if(NOT DEFINED VCPKG_TARGET_TRIPLET)
+        set(VCPKG_TARGET_TRIPLET "x64-windows")
+    endif()
 endif()
 
 project(OrbitSimulation C)
 
-# Find pthreads library
-find_package(PThreads4W REQUIRED)
+# Find pthreads library (platform-specific)
+if(WIN32)
+    find_package(PThreads4W REQUIRED)
+else()
+    set(THREADS_PREFER_PTHREAD_FLAG ON)
+    find_package(Threads REQUIRED)
+endif()
 
 # Find SDL3 packages
 find_package(SDL3 CONFIG REQUIRED)
@@ -43,12 +52,21 @@ if(WIN32)
 endif()
 
 # Link SDL3 libraries, cJSON, and pthreads
-target_link_libraries(${PROJECT_NAME} PRIVATE
-    SDL3::SDL3
-    SDL3_ttf::SDL3_ttf
-    cjson
-    PThreads4W::PThreads4W
-)
+if(WIN32)
+    target_link_libraries(${PROJECT_NAME} PRIVATE
+        SDL3::SDL3
+        SDL3_ttf::SDL3_ttf
+        cjson
+        PThreads4W::PThreads4W
+    )
+else()
+    target_link_libraries(${PROJECT_NAME} PRIVATE
+        SDL3::SDL3
+        SDL3_ttf::SDL3_ttf
+        cjson
+        Threads::Threads
+    )
+endif()
 
 # Copy font file to build directory
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD

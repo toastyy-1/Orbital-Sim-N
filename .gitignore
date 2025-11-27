@@ -16,3 +16,4 @@ Makefile
 # CMake generated files
 compile_commands.json
 CTestTestfile.cmake
+.vscode/c_cpp_properties.json
