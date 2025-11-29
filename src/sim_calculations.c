@@ -7,7 +7,6 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
-#include <cjson/cJSON.h>
 
 const double G = 6.67430E-11;
 
@@ -452,6 +451,8 @@ void runCalculations(body_properties_t** gb, spacecraft_properties_t** sc, windo
         }
 
         // increment the time based on the time step
-        wp->sim_time += wp->time_step;
+        if (gb != NULL && *gb != NULL) {
+            wp->sim_time += wp->time_step;
+        }
     }
 }
