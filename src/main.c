@@ -64,10 +64,6 @@ int main(int argc, char *argv[]) {
     button_storage_t buttons;
     initButtons(&buttons, wp);
 
-    // initialize text input
-    text_input_dialog_t dialog = {0};
-    init_text_dialog(&dialog);
-
     // initialize SDL3 window
     // create an SDL window
     SDL_Window* window = SDL_CreateWindow("Orbit Simulation", (int)wp.window_size_x, (int)wp.window_size_y, SDL_WINDOW_RESIZABLE);
@@ -138,9 +134,6 @@ int main(int argc, char *argv[]) {
         // draw speed control button
         renderUIButtons(renderer, &buttons, &wp);
 
-        // render text input dialog if active
-        renderBodyTextInputDialog(renderer, &dialog, wp);
-
         // draw time indicator text
         renderTimeIndicators(renderer, wp);
 
@@ -149,7 +142,7 @@ int main(int argc, char *argv[]) {
 
         // user input event checking logic
         SDL_Event event;
-        runEventCheck(&event, &wp, &gb, &num_bodies, &sc, &num_craft, &buttons, &dialog, &stats_window);
+        runEventCheck(&event, &wp, &gb, &num_bodies, &sc, &num_craft, &buttons, &stats_window);
 
         // render the bodies
         body_renderOrbitBodies(renderer, gb, num_bodies, wp);

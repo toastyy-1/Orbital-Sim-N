@@ -26,7 +26,7 @@ typedef struct {
 typedef struct {
     char* name;
     double mass;
-    float radius; // this is an approximate value just for visual purposes
+    double radius;
     float pixel_radius;
     double pos_x;
     double pos_y;
@@ -45,35 +45,54 @@ typedef struct {
 } body_properties_t;
 
 typedef struct {
+    double burn_start_time; // simulation time to start burn (seconds)
+    double burn_end_time;
+    double throttle; // how much throttle you're burning with
+    double burn_heading; // (rad)
+} burn_properties_t;
+
+typedef struct {
     char* name;
-    double pos_x;
+
+    double current_total_mass; // tracks the amount of mass in the ship at an instant
+    double dry_mass; // mass of the empty ship
+    double fuel_mass; // mass of the fuel
+
+    double pos_x; // in-world coordinates relative to the origin (meters)
     double pos_y;
-    float pixel_coordinates_x;
+    float pixel_coordinates_x; // on screen coordinates relative to the origin (pixels, center of the screen)
     float pixel_coordinates_y;
-    double vel_x;
+    double attitude; // 2d heading (radians)
+
+    double vel_x; // component of velocity relative to space
     double vel_y;
-    double vel;
-    double acc_x;
+    double vel; // total velocity relative to space
+    double rotational_v; // rotational velocity (CCW is positive)
+
+    double momentum;
+
+    double acc_x; // component of acceleration relative to space
     double acc_y;
     double acc_x_prev; // previous acceleration for verlet integration
     double acc_y_prev;
-    double force_x; // sum of the force acting on the body due to the planets' gravitational influence
-    double force_y;
+    double rotational_a; // rotational acceleration
 
-    double heading;
-    double dry_mass;
-    double fuel_mass;
-    double current_total_mass; // tracks the amount of mass in the ship at an instant
+    double moment_of_inertia;
+
+    double grav_force_x; // sum of the force acting on the body due to the planets' gravitational influence
+    double grav_force_y;
+    double torque; // applied torque (CCW is positive)
+
+    double thrust; // thrust force of the craft (N)
     double mass_flow_rate;
-    double thrust;
     double specific_impulse;
     double throttle;
+    double nozzle_gimbal_range; // radians
+    double nozzle_velocity;
     bool engine_on;
 
-    double burn_start_time;   // simulation time to start burn (seconds)
-    double burn_duration;     // how long to burn
-    double burn_heading;      // direction to burn - rad
-    double burn_throttle;     // throttle setting for the burn - 0-1
+    int num_burns;
+    burn_properties_t* burn_properties;
 } spacecraft_properties_t;
 
 typedef struct {

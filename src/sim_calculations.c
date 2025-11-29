@@ -114,13 +114,13 @@ void body_transformCoordinates(body_properties_t *b, window_params_t wp) {
 
 // calculates the size (in pixels) that the planet should appear on the screen based on its mass
 float body_calculateVisualRadius(body_properties_t* body, window_params_t wp) {
-    float r = body->radius / (float)wp.meters_per_pixel;
+    float r = (float)body->radius / (float)wp.meters_per_pixel;
     body->pixel_radius = r;
     return r;
 }
 
 // function to add a new body to the system
-void body_addOrbitalBody(body_properties_t** gb, int* num_bodies, const char* name, const double mass, const double x_pos, const double y_pos, const double x_vel, const double y_vel) {
+void body_addOrbitalBody(body_properties_t** gb, int* num_bodies, const char* name, const double mass, const double radius, const double x_pos, const double y_pos, const double x_vel, const double y_vel) {
     // reallocate memory for the new body
     body_properties_t* temp = (body_properties_t *)realloc(*gb, (*num_bodies + 1) * sizeof(body_properties_t));
     if (temp == NULL) {
@@ -155,7 +155,7 @@ void body_addOrbitalBody(body_properties_t** gb, int* num_bodies, const char* na
     (*gb)[*num_bodies].force_y = 0.0;
 
     // calculate the radius based on mass
-    (*gb)[*num_bodies].radius = (float)pow(mass, 0.279);
+    (*gb)[*num_bodies].radius = radius;
 
     // calculate initial velocity magnitude and kinetic energy
     (*gb)[*num_bodies].vel = sqrt(x_vel * x_vel + y_vel * y_vel);
@@ -187,29 +187,38 @@ void craft_calculateGravForce(spacecraft_properties_t* s, body_properties_t b) {
 
     // calculate the force that the body applies on the craft due to gravitation (F = (GMm) / r)
     const double total_force = (G * s->current_total_mass * b.mass) / (r * r);
-    s->force_x += total_force * (delta_pos_x / r);
-    s->force_y += total_force * (delta_pos_y / r);
+    s->grav_force_x += total_force * (delta_pos_x / r);
+    s->grav_force_y += total_force * (delta_pos_y / r);
 }
 
-// updates the force 
+// updates the force
 void craft_applyThrust(spacecraft_properties_t* s) {
     if (s->engine_on && s->fuel_mass > 0) {
         const double current_thrust = s->thrust * s->throttle;
-        s->force_x += current_thrust * cos(s->heading);
-        s->force_y += current_thrust * sin(s->heading);
+        s->grav_force_x += current_thrust * cos(s->attitude);
+        s->grav_force_y += current_thrust * sin(s->attitude);
     }
 }
 
 // check and activate burns
 void craft_checkBurnSchedule(spacecraft_properties_t* s, const double sim_time) {
-    const double burn_end_time = s->burn_start_time + s->burn_duration;
-    
-    // check if within the burn window
-    if (sim_time >= s->burn_start_time && sim_time < burn_end_time && s->fuel_mass > 0) {
-        s->engine_on = true;
-        s->throttle = s->burn_throttle;
-        s->heading = s->burn_heading;
-    } else if (sim_time >= burn_end_time) {
+    // loop through all burns and check if any should be active
+    bool burn_active = false;
+    for (int i = 0; i < s->num_burns; i++) {
+        // check if within the burn window
+        if (sim_time >= s->burn_properties[i].burn_start_time &&
+            sim_time < s->burn_properties[i].burn_end_time &&
+            s->fuel_mass > 0) {
+            s->engine_on = true;
+            s->throttle = s->burn_properties[i].throttle;
+            s->attitude = s->burn_properties[i].burn_heading;
+            burn_active = true;
+            break; // only execute one burn at a time
+        }
+    }
+
+    // if no burn is active, turn off the engine
+    if (!burn_active) {
         s->engine_on = false;
         s->throttle = 0.0;
     }
@@ -235,8 +244,8 @@ void craft_consumeFuel(spacecraft_properties_t* s, double dt) {
 // uses velocity verlet integration
 void craft_updateMotion(spacecraft_properties_t* s, const double dt) {
     // calculate the current acceleration from the force on the object
-    s->acc_x = s->force_x / s->current_total_mass;
-    s->acc_y = s->force_y / s->current_total_mass;
+    s->acc_x = s->grav_force_x / s->current_total_mass;
+    s->acc_y = s->grav_force_y / s->current_total_mass;
 
     // update position using current velocity and acceleration
     s->pos_x += (s->vel_x * dt) + (0.5 * s->acc_x * dt * dt);
@@ -257,6 +266,8 @@ void craft_addSpacecraft(spacecraft_properties_t** sc, int* num_craft, const cha
                         const double x_pos, const double y_pos, const double x_vel, const double y_vel,
                         const double dry_mass, const double fuel_mass, const double thrust,
                         const double specific_impulse, const double mass_flow_rate,
+                        const double attitude, const double moment_of_inertia,
+                        const double nozzle_gimbal_range,
                         const double burn_start_time, const double burn_duration,
                         const double burn_heading, const double burn_throttle) {
     // reallocate memory for the new spacecraft
@@ -289,15 +300,15 @@ void craft_addSpacecraft(spacecraft_properties_t** sc, int* num_craft, const cha
     (*sc)[*num_craft].acc_y_prev = 0.0;
 
     // initialize forces to zero
-    (*sc)[*num_craft].force_x = 0.0;
-    (*sc)[*num_craft].force_y = 0.0;
+    (*sc)[*num_craft].grav_force_x = 0.0;
+    (*sc)[*num_craft].grav_force_y = 0.0;
 
     // initialize pixel coordinates
     (*sc)[*num_craft].pixel_coordinates_x = 0;
     (*sc)[*num_craft].pixel_coordinates_y = 0;
 
     // initialize spacecraft-specific properties
-    (*sc)[*num_craft].heading = 0.0;
+    (*sc)[*num_craft].attitude = attitude;
     (*sc)[*num_craft].dry_mass = dry_mass;
     (*sc)[*num_craft].fuel_mass = fuel_mass;
     (*sc)[*num_craft].current_total_mass = dry_mass + fuel_mass;
@@ -307,11 +318,29 @@ void craft_addSpacecraft(spacecraft_properties_t** sc, int* num_craft, const cha
     (*sc)[*num_craft].throttle = 0.0f;
     (*sc)[*num_craft].engine_on = false;
 
-    // initialize burn schedule parameters
-    (*sc)[*num_craft].burn_start_time = burn_start_time;
-    (*sc)[*num_craft].burn_duration = burn_duration;
-    (*sc)[*num_craft].burn_heading = burn_heading;
-    (*sc)[*num_craft].burn_throttle = burn_throttle;
+    // initialize rotational and physics properties
+    (*sc)[*num_craft].rotational_v = 0.0;
+    (*sc)[*num_craft].momentum = 0.0;
+    (*sc)[*num_craft].rotational_a = 0.0;
+    (*sc)[*num_craft].moment_of_inertia = moment_of_inertia;
+    (*sc)[*num_craft].torque = 0.0;
+
+    // initialize nozzle properties
+    (*sc)[*num_craft].nozzle_gimbal_range = nozzle_gimbal_range;
+    (*sc)[*num_craft].nozzle_velocity = 0.0;
+
+    // initialize burn schedule with a single burn
+    (*sc)[*num_craft].num_burns = 1;
+    (*sc)[*num_craft].burn_properties = (burn_properties_t*)malloc(sizeof(burn_properties_t));
+    if ((*sc)[*num_craft].burn_properties == NULL) {
+        displayError("ERROR", "Error: Failed to allocate memory for burn properties\n");
+        free((*sc)[*num_craft].name);
+        return;
+    }
+    (*sc)[*num_craft].burn_properties[0].burn_start_time = burn_start_time;
+    (*sc)[*num_craft].burn_properties[0].burn_end_time = burn_start_time + burn_duration;
+    (*sc)[*num_craft].burn_properties[0].throttle = burn_throttle;
+    (*sc)[*num_craft].burn_properties[0].burn_heading = burn_heading;
 
     // increment the craft count
     (*num_craft)++;
@@ -348,6 +377,7 @@ void resetSim(double* sim_time, body_properties_t** gb, int* num_bodies, spacecr
     if (*sc != NULL) {
         for (int i = 0; i < *num_craft; i++) {
             free((*sc)[i].name);
+            free((*sc)[i].burn_properties);
         }
         free(*sc);
         *sc = NULL;
@@ -396,8 +426,8 @@ void runCalculations(body_properties_t** gb, spacecraft_properties_t** sc, windo
         ////////////////////////////////////////////////////////////////
         if (sc != NULL && *sc != NULL && gb != NULL && *gb != NULL) {
             for (int i = 0; i < num_craft; i++) {
-                (*sc)[i].force_x = 0;
-                (*sc)[i].force_y = 0;
+                (*sc)[i].grav_force_x = 0;
+                (*sc)[i].grav_force_y = 0;
 
                 // check if burn should be active based on simulation time
                 craft_checkBurnSchedule(&(*sc)[i], wp->sim_time);

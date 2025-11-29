@@ -13,7 +13,7 @@ void body_updateMotion(body_properties_t* b, double dt);
 void body_transformCoordinates(body_properties_t* b, window_params_t window_params);
 void body_calculateKineticEnergy(body_properties_t* b);
 float body_calculateVisualRadius(body_properties_t* body, window_params_t wp);
-void body_addOrbitalBody(body_properties_t** gb, int* num_bodies, const char* name, double mass, double x_pos, double y_pos, double x_vel, double y_vel);
+void body_addOrbitalBody(body_properties_t** gb, int* num_bodies, const char* name, double mass, double radius, double x_pos, double y_pos, double x_vel, double y_vel);
 void resetSim(double* sim_time, body_properties_t** gb, int* num_bodies, spacecraft_properties_t** sc, int* num_craft);
 
 // system energy calculation
@@ -29,7 +29,9 @@ void craft_addSpacecraft(spacecraft_properties_t** sc, int* num_craft, const cha
                         double x_pos, double y_pos, double x_vel, double y_vel,
                         double dry_mass, double fuel_mass, double thrust,
                         double specific_impulse, double mass_flow_rate,
-                        double burn_start_time, double burn_duration, 
+                        double attitude, double moment_of_inertia,
+                        double nozzle_gimbal_range,
+                        double burn_start_time, double burn_duration,
                         double burn_heading, double burn_throttle);
 
 void runCalculations(body_properties_t** gb, spacecraft_properties_t** sc, window_params_t* wp, int num_bodies, int num_craft); // MAIN CALCULATION LOOP -- DOES ALL THE MATH

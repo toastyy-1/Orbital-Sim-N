@@ -52,6 +52,7 @@ void readBodyJSON(const char* FILENAME, body_properties_t** gb, int* num_bodies)
     cJSON_ArrayForEach(body, bodies) {
         cJSON* name_item = cJSON_GetObjectItemCaseSensitive(body, "name");
         cJSON* mass_item = cJSON_GetObjectItemCaseSensitive(body, "mass");
+        cJSON* radius_item = cJSON_GetObjectItemCaseSensitive(body, "radius");
         cJSON* pos_x_item = cJSON_GetObjectItemCaseSensitive(body, "pos_x");
         cJSON* pos_y_item = cJSON_GetObjectItemCaseSensitive(body, "pos_y");
         cJSON* vel_x_item = cJSON_GetObjectItemCaseSensitive(body, "vel_x");
@@ -60,6 +61,7 @@ void readBodyJSON(const char* FILENAME, body_properties_t** gb, int* num_bodies)
         body_addOrbitalBody(gb, num_bodies,
                             name_item->valuestring,
                             mass_item->valuedouble,
+                            radius_item->valuedouble,
                             pos_x_item->valuedouble,
                             pos_y_item->valuedouble,
                             vel_x_item->valuedouble,
@@ -123,6 +125,9 @@ void readSpacecraftJSON(const char* FILENAME, spacecraft_properties_t** sc, int*
         cJSON* thrust_item = cJSON_GetObjectItemCaseSensitive(craft, "thrust");
         cJSON* specific_impulse_item = cJSON_GetObjectItemCaseSensitive(craft, "specific_impulse");
         cJSON* mass_flow_rate_item = cJSON_GetObjectItemCaseSensitive(craft, "mass_flow_rate");
+        cJSON* attitude_item = cJSON_GetObjectItemCaseSensitive(craft, "attitude");
+        cJSON* moment_of_inertia_item = cJSON_GetObjectItemCaseSensitive(craft, "moment_of_inertia");
+        cJSON* nozzle_gimbal_range_item = cJSON_GetObjectItemCaseSensitive(craft, "nozzle_gimbal_range");
         cJSON* burn_start_time_item = cJSON_GetObjectItemCaseSensitive(craft, "burn_start_time");
         cJSON* burn_duration_item = cJSON_GetObjectItemCaseSensitive(craft, "burn_duration");
         cJSON* burn_heading_item = cJSON_GetObjectItemCaseSensitive(craft, "burn_heading");
@@ -139,6 +144,9 @@ void readSpacecraftJSON(const char* FILENAME, spacecraft_properties_t** sc, int*
                             thrust_item->valuedouble,
                             specific_impulse_item->valuedouble,
                             mass_flow_rate_item->valuedouble,
+                            attitude_item->valuedouble,
+                            moment_of_inertia_item->valuedouble,
+                            nozzle_gimbal_range_item->valuedouble,
                             burn_start_time_item->valuedouble,
                             burn_duration_item->valuedouble,
                             burn_heading_item->valuedouble,
