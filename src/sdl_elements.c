@@ -34,7 +34,7 @@ void init_window_params(window_params_t* wp) {
 }
 
 // draw a circle in SDL
-void SDL_RenderFillCircle(SDL_Renderer* renderer, float centerX, float centerY, float radius) {
+void SDL_RenderFillCircle(SDL_Renderer* renderer, const float centerX, const float centerY, const float radius) {
     float x = radius;
     float y = 0;
     float radiusError = 1 - x;
@@ -56,7 +56,7 @@ void SDL_RenderFillCircle(SDL_Renderer* renderer, float centerX, float centerY, 
 }
 
 // helper function to write text to the screen
-void SDL_WriteText(SDL_Renderer* renderer, TTF_Font* font, const char* text, float x, float y, SDL_Color color) {
+void SDL_WriteText(SDL_Renderer* renderer, TTF_Font* font, const char* text, const float x, const float y, const SDL_Color color) {
     if (!text || !font || !renderer) return;
     
     SDL_Surface* text_surface = TTF_RenderText_Blended(font, text, 0, color);
@@ -76,7 +76,7 @@ void SDL_WriteText(SDL_Renderer* renderer, TTF_Font* font, const char* text, flo
 }
 
 // draw graph-like axes with tick marks and labels
-void drawScaleBar(SDL_Renderer* renderer, window_params_t wp) {
+void drawScaleBar(SDL_Renderer* renderer, const window_params_t wp) {
     SDL_SetRenderDrawColor(renderer, 60, 70, 85, 255);
 
     float axis_thickness = 1.5f;
@@ -150,12 +150,12 @@ void drawScaleBar(SDL_Renderer* renderer, window_params_t wp) {
 }
 
 // thing that calculates changing sim speed
-bool isMouseInRect(int mouse_x, int mouse_y, int rect_x, int rect_y, int rect_w, int rect_h) {
+bool isMouseInRect(const int mouse_x, const int mouse_y, const int rect_x, const int rect_y, const int rect_w, const int rect_h) {
     return (mouse_x >= rect_x && mouse_x <= rect_x + rect_w &&
             mouse_y >= rect_y && mouse_y <= rect_y + rect_h);
 }
 
-void body_renderOrbitBodies(SDL_Renderer* renderer, body_properties_t* gb, window_params_t wp) {
+void body_renderOrbitBodies(SDL_Renderer* renderer, body_properties_t* gb, const window_params_t wp) {
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     for (int i = 0; i < gb->count; i++) {
         // draw bodies
@@ -177,7 +177,7 @@ void craft_renderCrafts(SDL_Renderer* renderer, const spacecraft_properties_t* s
     }
 }
 
-void renderTimeIndicators(SDL_Renderer* renderer, window_params_t wp) {
+void renderTimeIndicators(SDL_Renderer* renderer, const window_params_t wp) {
     float right_margin = wp.window_size_x * 0.68f;
     float top_margin = wp.window_size_y * 0.015f;
 
@@ -338,7 +338,7 @@ void showFPS(SDL_Renderer* renderer, const Uint64 frame_start_time, const Uint64
 }
 
 // the stats box that shows stats yay
-void renderStatsBox(SDL_Renderer* renderer, body_properties_t* bodies, const spacecraft_properties_t* sc, window_params_t wp, stats_window_t* stats_window) {
+void renderStatsBox(SDL_Renderer* renderer, body_properties_t* bodies, const spacecraft_properties_t* sc, const window_params_t wp, stats_window_t* stats_window) {
     const float margin_x    = (wp.window_size_x * 0.02f);
     const float top_y       = (wp.window_size_y * 0.1f);
     const float line_height = (wp.window_size_y * 0.025f);

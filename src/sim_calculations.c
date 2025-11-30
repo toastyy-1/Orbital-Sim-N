@@ -16,7 +16,7 @@ const double G = 6.67430E-11;
 // at the end of each sim loop, this function should be run to calculate the changes in
 // the force values based on other parameters. for example, using F to find a based on m.
 // i is the body that has the force applied to it, whilst j is the body applying force to i
-void body_calculateGravForce(body_properties_t* bodies, int i, int j) {
+void body_calculateGravForce(const body_properties_t* bodies, const int i, const int j) {
     // calculate the distance between the two bodies
     const double delta_pos_x = bodies->pos_x[j] - bodies->pos_x[i];
     const double delta_pos_y = bodies->pos_y[j] - bodies->pos_y[i];
@@ -36,7 +36,7 @@ void body_calculateGravForce(body_properties_t* bodies, int i, int j) {
 
 // this calculates the changes of velocity and position based on the force values
 // this uses a method called velocity verlet integration
-void body_updateMotion(body_properties_t* bodies, int i, const double dt) {
+void body_updateMotion(const body_properties_t* bodies, const int i, const double dt) {
     // calculate the current acceleration from the force on the object
     bodies->acc_x[i] = bodies->force_x[i] / bodies->mass[i];
     bodies->acc_y[i] = bodies->force_y[i] / bodies->mass[i];
@@ -57,7 +57,7 @@ void body_updateMotion(body_properties_t* bodies, int i, const double dt) {
 }
 
 // calculates the kinetic energy of a target body
-void body_calculateKineticEnergy(body_properties_t* bodies, int i) {
+void body_calculateKineticEnergy(const body_properties_t* bodies, const int i) {
     // calculate kinetic energy (0.5mv^2)
     bodies->kinetic_energy[i] = 0.5 * bodies->mass[i] * bodies->vel[i] * bodies->vel[i];
 }
@@ -106,13 +106,13 @@ double calculateTotalSystemEnergy(const body_properties_t* gb, const spacecraft_
 }
 
 // transforms spacial coordinates (for example, in meters) to pixel coordinates
-void body_transformCoordinates(body_properties_t* bodies, int i, window_params_t wp) {
+void body_transformCoordinates(const body_properties_t* bodies, const int i, const window_params_t wp) {
     bodies->pixel_coordinates_x[i] = wp.screen_origin_x + ((float)bodies->pos_x[i] / (float)wp.meters_per_pixel);
     bodies->pixel_coordinates_y[i] = wp.screen_origin_y - ((float)bodies->pos_y[i] / (float)wp.meters_per_pixel); // this is negative because the SDL origin is in the top left, so positive y is 'down'
 }
 
 // calculates the size (in pixels) that the planet should appear on the screen based on its mass
-float body_calculateVisualRadius(body_properties_t* bodies, int i, window_params_t wp) {
+float body_calculateVisualRadius(const body_properties_t* bodies, const int i, const window_params_t wp) {
     float r = (float)bodies->radius[i] / (float)wp.meters_per_pixel;
     bodies->pixel_radius[i] = r;
     return r;
@@ -181,7 +181,7 @@ void body_addOrbitalBody(body_properties_t* gb, const char* name, const double m
         displayError("ERROR", "Error: Failed to allocate memory for body name\n");
         return;
     }
-    strcpy(gb->names[idx], name);
+    strcpy_s(gb->names[idx], strlen(name) + 1, name);
 
     // initialize the new body
     gb->mass[idx] = mass;
@@ -211,7 +211,7 @@ void body_addOrbitalBody(body_properties_t* gb, const char* name, const double m
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // calculates the force applied on a spacecraft by a specific body
 // (this should be used before any other force functions)
-void craft_calculateGravForce(spacecraft_properties_t* sc, int i, body_properties_t* bodies, int j) {
+void craft_calculateGravForce(const spacecraft_properties_t* sc, const int i, const body_properties_t* bodies, const int j) {
     // calculate the distance between the spacecraft and the body
     const double delta_pos_x = bodies->pos_x[j] - sc->pos_x[i];
     const double delta_pos_y = bodies->pos_y[j] - sc->pos_y[i];
@@ -233,7 +233,7 @@ void craft_calculateGravForce(spacecraft_properties_t* sc, int i, body_propertie
 }
 
 // updates the force
-void craft_applyThrust(spacecraft_properties_t* sc, int i) {
+void craft_applyThrust(const spacecraft_properties_t* sc, const int i) {
     if (sc->engine_on[i] && sc->fuel_mass[i] > 0) {
         const double current_thrust = sc->thrust[i] * sc->throttle[i];
         sc->grav_force_x[i] += current_thrust * cos(sc->attitude[i]);
@@ -242,7 +242,7 @@ void craft_applyThrust(spacecraft_properties_t* sc, int i) {
 }
 
 // check and activate burns
-void craft_checkBurnSchedule(spacecraft_properties_t* sc, int i, const double sim_time) {
+void craft_checkBurnSchedule(const spacecraft_properties_t* sc, const int i, const double sim_time) {
     // loop through all burns and check if any should be active
     bool burn_active = false;
     for (int j = 0; j < sc->num_burns[i]; j++) {
@@ -266,7 +266,7 @@ void craft_checkBurnSchedule(spacecraft_properties_t* sc, int i, const double si
 }
 
 
-void craft_consumeFuel(spacecraft_properties_t* sc, int i, double dt) {
+void craft_consumeFuel(const spacecraft_properties_t* sc, const int i, const double dt) {
     if (sc->engine_on[i] && sc->fuel_mass[i] > 0) {
         double fuel_consumed = sc->mass_flow_rate[i] * sc->throttle[i] * dt;
 
@@ -283,7 +283,7 @@ void craft_consumeFuel(spacecraft_properties_t* sc, int i, double dt) {
 
 // updates the motion of the spacecraft based on the force currently applied to it
 // uses velocity verlet integration
-void craft_updateMotion(spacecraft_properties_t* sc, int i, const double dt) {
+void craft_updateMotion(const spacecraft_properties_t* sc, const int i, const double dt) {
     // calculate the current acceleration from the force on the object
     sc->acc_x[i] = sc->grav_force_x[i] / sc->current_total_mass[i];
     sc->acc_y[i] = sc->grav_force_y[i] / sc->current_total_mass[i];
@@ -392,7 +392,7 @@ void craft_addSpacecraft(spacecraft_properties_t* sc, const char* name,
 
     // allocate memory for the name and copy it
     sc->names[idx] = (char*)malloc(strlen(name) + 1);
-    strcpy(sc->names[idx], name);
+    strcpy_s(sc->names[idx], strlen(name) + 1, name);
 
     // initialize the new craft
     sc->pos_x[idx] = x_pos;
@@ -438,7 +438,7 @@ void craft_addSpacecraft(spacecraft_properties_t* sc, const char* name,
 }
 
 // transform the craft coordinates in meters to pixel coordinates on the screen
-void craft_transformCoordinates(spacecraft_properties_t* sc, int i, window_params_t wp) {
+void craft_transformCoordinates(const spacecraft_properties_t* sc, const int i, const window_params_t wp) {
     sc->pixel_coordinates_x[i] = wp.screen_origin_x + (float)(sc->pos_x[i] / wp.meters_per_pixel);
     sc->pixel_coordinates_y[i] = wp.screen_origin_y - (float)(sc->pos_y[i] / wp.meters_per_pixel); // this is negative because the SDL origin is in the top left, so positive y is 'down'
 }
