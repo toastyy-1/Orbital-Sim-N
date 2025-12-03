@@ -167,72 +167,20 @@ int main(int argc, char *argv[]) {
     ////////////////////////////////////////////////////
     // CLEAN UP                                       //
     ////////////////////////////////////////////////////
+
     // wait for simulation thread to finish
     pthread_join(simThread, NULL);
 
     // destroy mutex
     pthread_mutex_destroy(&sim_vars_mutex);
 
-    // free all bodies
-    for (int i = 0; i < gb.count; i++) {
-        free(gb.names[i]);
-    }
-    free(gb.names);
-    free(gb.mass);
-    free(gb.radius);
-    free(gb.pixel_radius);
-    free(gb.pos_x);
-    free(gb.pos_y);
-    free(gb.pixel_coordinates_x);
-    free(gb.pixel_coordinates_y);
-    free(gb.vel_x);
-    free(gb.vel_y);
-    free(gb.vel);
-    free(gb.acc_x);
-    free(gb.acc_y);
-    free(gb.acc_x_prev);
-    free(gb.acc_y_prev);
-    free(gb.force_x);
-    free(gb.force_y);
-    free(gb.kinetic_energy);
-
-    // free all spacecraft
-    for (int i = 0; i < sc.count; i++) {
-        free(sc.names[i]);
-        free(sc.burn_properties[i]);
-    }
-    free(sc.names);
-    free(sc.current_total_mass);
-    free(sc.dry_mass);
-    free(sc.fuel_mass);
-    free(sc.pos_x);
-    free(sc.pos_y);
-    free(sc.pixel_coordinates_x);
-    free(sc.pixel_coordinates_y);
-    free(sc.attitude);
-    free(sc.vel_x);
-    free(sc.vel_y);
-    free(sc.vel);
-    free(sc.rotational_v);
-    free(sc.momentum);
-    free(sc.acc_x);
-    free(sc.acc_y);
-    free(sc.acc_x_prev);
-    free(sc.acc_y_prev);
-    free(sc.rotational_a);
-    free(sc.moment_of_inertia);
-    free(sc.grav_force_x);
-    free(sc.grav_force_y);
-    free(sc.torque);
-    free(sc.thrust);
-    free(sc.mass_flow_rate);
-    free(sc.specific_impulse);
-    free(sc.throttle);
-    free(sc.nozzle_gimbal_range);
-    free(sc.nozzle_velocity);
-    free(sc.engine_on);
-    free(sc.num_burns);
-    free(sc.burn_properties);
+    // cleanup all allocated memory
+    cleanup_args clean_args = {
+        .gb = &gb,
+        .sc = &sc,
+        .wp = &wp,
+    };
+    cleanup(&clean_args);
 
     if (g_font) TTF_CloseFont(g_font);
     if (g_font_small) TTF_CloseFont(g_font_small);

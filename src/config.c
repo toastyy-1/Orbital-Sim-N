@@ -164,3 +164,70 @@ void readSpacecraftJSON(const char* FILENAME, spacecraft_properties_t* sc) {
 
     cJSON_Delete(json);
 }
+
+
+// cleanup for main
+void cleanup(void* args) {
+    const cleanup_args* c = (cleanup_args*)args;
+
+    // free all bodies
+    for (int i = 0; i < c->gb->count; i++) {
+        free(c->gb->names[i]);
+    }
+    free(c->gb->names);
+    free(c->gb->mass);
+    free(c->gb->radius);
+    free(c->gb->pixel_radius);
+    free(c->gb->pos_x);
+    free(c->gb->pos_y);
+    free(c->gb->pixel_coordinates_x);
+    free(c->gb->pixel_coordinates_y);
+    free(c->gb->vel_x);
+    free(c->gb->vel_y);
+    free(c->gb->vel);
+    free(c->gb->acc_x);
+    free(c->gb->acc_y);
+    free(c->gb->acc_x_prev);
+    free(c->gb->acc_y_prev);
+    free(c->gb->force_x);
+    free(c->gb->force_y);
+    free(c->gb->kinetic_energy);
+
+    // free all spacecraft
+    for (int i = 0; i < c->sc->count; i++) {
+        free(c->sc->names[i]);
+        free(c->sc->burn_properties[i]);
+    }
+    free(c->sc->names);
+    free(c->sc->current_total_mass);
+    free(c->sc->dry_mass);
+    free(c->sc->fuel_mass);
+    free(c->sc->pos_x);
+    free(c->sc->pos_y);
+    free(c->sc->pixel_coordinates_x);
+    free(c->sc->pixel_coordinates_y);
+    free(c->sc->attitude);
+    free(c->sc->vel_x);
+    free(c->sc->vel_y);
+    free(c->sc->vel);
+    free(c->sc->rotational_v);
+    free(c->sc->momentum);
+    free(c->sc->acc_x);
+    free(c->sc->acc_y);
+    free(c->sc->acc_x_prev);
+    free(c->sc->acc_y_prev);
+    free(c->sc->rotational_a);
+    free(c->sc->moment_of_inertia);
+    free(c->sc->grav_force_x);
+    free(c->sc->grav_force_y);
+    free(c->sc->torque);
+    free(c->sc->thrust);
+    free(c->sc->mass_flow_rate);
+    free(c->sc->specific_impulse);
+    free(c->sc->throttle);
+    free(c->sc->nozzle_gimbal_range);
+    free(c->sc->nozzle_velocity);
+    free(c->sc->engine_on);
+    free(c->sc->num_burns);
+    free(c->sc->burn_properties);
+}

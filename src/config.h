@@ -139,4 +139,12 @@ typedef struct {
 void readBodyJSON(const char* FILENAME, body_properties_t* gb);
 void readSpacecraftJSON(const char* FILENAME, spacecraft_properties_t* sc);
 
+
+typedef struct {
+    body_properties_t* gb;
+    spacecraft_properties_t* sc;
+    window_params_t* wp;
+} cleanup_args;
+void cleanup(void* args);
+
 #endif
