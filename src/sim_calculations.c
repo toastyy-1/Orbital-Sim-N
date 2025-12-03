@@ -7,6 +7,7 @@
 #include <math.h>
 #include <string.h>
 #include <immintrin.h>
+#include <stdio.h>
 
 const double G = 6.67430E-11;
 
@@ -16,16 +17,21 @@ const double G = 6.67430E-11;
 // at the end of each sim loop, this function should be run to calculate the changes in
 // the force values based on other parameters. for example, using F to find a based on m.
 // i is the body that has the force applied to it, whilst j is the body applying force to i
-void body_calculateGravForce(const body_properties_t* bodies, const int i, const int j) {
+void body_calculateGravForce(const body_properties_t* bodies, const int i, const int j, window_params_t* wp) {
     // calculate the distance between the two bodies
     const double delta_pos_x = bodies->pos_x[j] - bodies->pos_x[i];
     const double delta_pos_y = bodies->pos_y[j] - bodies->pos_y[i];
     const double r_squared = delta_pos_x * delta_pos_x + delta_pos_y * delta_pos_y;
 
-    // prevent division by zero
-    const double min_distance_squared = 1.0;
-    if (r_squared < min_distance_squared) {
-        return;  // skip calculation if bodies are too close
+    // planet collision logic
+    const double radius_squared = bodies->radius[i] * bodies->radius[i];
+    if (r_squared < radius_squared) {
+        wp->sim_running = false;
+        wp->reset_sim = true;
+        char err_txt[128];
+        snprintf(err_txt, sizeof(err_txt), "Warning: %s has collided with %s\n\nResetting Simulation...", bodies->names[i], bodies->names[j]);
+        displayError("PLANET COLLISION", err_txt);
+        return;
     }
 
     // optimized version of the gravitation equation because computers dislike division
@@ -130,73 +136,67 @@ float body_calculateVisualRadius(const body_properties_t* bodies, const int i, c
 
 // function to add a new body to the system
 void body_addOrbitalBody(body_properties_t* gb, const char* name, const double mass, const double radius, const double x_pos, const double y_pos, const double x_vel, const double y_vel) {
-    // check if we need to grow the capacity
-    if (gb->count >= gb->capacity) {
-        int new_capacity = gb->capacity == 0 ? 8 : gb->capacity * 2;
+    int new_size = gb->count + 1;
 
-        // reallocate all arrays
-        char** temp_names = (char**)realloc(gb->names, new_capacity * sizeof(char*));
-        double* temp_mass = (double*)realloc(gb->mass, new_capacity * sizeof(double));
-        double* temp_radius = (double*)realloc(gb->radius, new_capacity * sizeof(double));
-        float* temp_pixel_radius = (float*)realloc(gb->pixel_radius, new_capacity * sizeof(float));
-        double* temp_pos_x = (double*)realloc(gb->pos_x, new_capacity * sizeof(double));
-        double* temp_pos_y = (double*)realloc(gb->pos_y, new_capacity * sizeof(double));
-        float* temp_pixel_x = (float*)realloc(gb->pixel_coordinates_x, new_capacity * sizeof(float));
-        float* temp_pixel_y = (float*)realloc(gb->pixel_coordinates_y, new_capacity * sizeof(float));
-        double* temp_vel_x = (double*)realloc(gb->vel_x, new_capacity * sizeof(double));
-        double* temp_vel_y = (double*)realloc(gb->vel_y, new_capacity * sizeof(double));
-        double* temp_vel = (double*)realloc(gb->vel, new_capacity * sizeof(double));
-        double* temp_acc_x = (double*)realloc(gb->acc_x, new_capacity * sizeof(double));
-        double* temp_acc_y = (double*)realloc(gb->acc_y, new_capacity * sizeof(double));
-        double* temp_acc_x_prev = (double*)realloc(gb->acc_x_prev, new_capacity * sizeof(double));
-        double* temp_acc_y_prev = (double*)realloc(gb->acc_y_prev, new_capacity * sizeof(double));
-        double* temp_force_x = (double*)realloc(gb->force_x, new_capacity * sizeof(double));
-        double* temp_force_y = (double*)realloc(gb->force_y, new_capacity * sizeof(double));
-        double* temp_kinetic = (double*)realloc(gb->kinetic_energy, new_capacity * sizeof(double));
-        float** temp_cached_body_coords_x = (float**)realloc(gb->cached_body_coords_x, new_capacity * sizeof(float*));
-        float** temp_cached_body_coords_y = (float**)realloc(gb->cached_body_coords_y, new_capacity * sizeof(float*));
+    // reallocate all arrays
+    char** temp_names = (char**)realloc(gb->names, new_size * sizeof(char*));
+    double* temp_mass = (double*)realloc(gb->mass, new_size * sizeof(double));
+    double* temp_radius = (double*)realloc(gb->radius, new_size * sizeof(double));
+    float* temp_pixel_radius = (float*)realloc(gb->pixel_radius, new_size * sizeof(float));
+    double* temp_pos_x = (double*)realloc(gb->pos_x, new_size * sizeof(double));
+    double* temp_pos_y = (double*)realloc(gb->pos_y, new_size * sizeof(double));
+    float* temp_pixel_x = (float*)realloc(gb->pixel_coordinates_x, new_size * sizeof(float));
+    float* temp_pixel_y = (float*)realloc(gb->pixel_coordinates_y, new_size * sizeof(float));
+    double* temp_vel_x = (double*)realloc(gb->vel_x, new_size * sizeof(double));
+    double* temp_vel_y = (double*)realloc(gb->vel_y, new_size * sizeof(double));
+    double* temp_vel = (double*)realloc(gb->vel, new_size * sizeof(double));
+    double* temp_acc_x = (double*)realloc(gb->acc_x, new_size * sizeof(double));
+    double* temp_acc_y = (double*)realloc(gb->acc_y, new_size * sizeof(double));
+    double* temp_acc_x_prev = (double*)realloc(gb->acc_x_prev, new_size * sizeof(double));
+    double* temp_acc_y_prev = (double*)realloc(gb->acc_y_prev, new_size * sizeof(double));
+    double* temp_force_x = (double*)realloc(gb->force_x, new_size * sizeof(double));
+    double* temp_force_y = (double*)realloc(gb->force_y, new_size * sizeof(double));
+    double* temp_kinetic = (double*)realloc(gb->kinetic_energy, new_size * sizeof(double));
+    float** temp_cached_body_coords_x = (float**)realloc(gb->cached_body_coords_x, new_size * sizeof(float*));
+    float** temp_cached_body_coords_y = (float**)realloc(gb->cached_body_coords_y, new_size * sizeof(float*));
 
-        if (!temp_names || !temp_mass || !temp_radius || !temp_pixel_radius ||
-            !temp_pos_x || !temp_pos_y || !temp_pixel_x || !temp_pixel_y ||
-            !temp_vel_x || !temp_vel_y || !temp_vel || !temp_acc_x || !temp_acc_y ||
-            !temp_acc_x_prev || !temp_acc_y_prev || !temp_force_x || !temp_force_y || !temp_kinetic ||
-            !temp_cached_body_coords_x || !temp_cached_body_coords_y) {
-            displayError("ERROR", "Error: Failed to allocate memory for new body\n");
-            return;
-        }
-
-        // allocate cache arrays for any new body slots
-        for (int i = gb->capacity; i < new_capacity; i++) {
-            temp_cached_body_coords_x[i] = (float*)calloc(PATH_CACHE_LENGTH, sizeof(float));
-            temp_cached_body_coords_y[i] = (float*)calloc(PATH_CACHE_LENGTH, sizeof(float));
-            if (!temp_cached_body_coords_x[i] || !temp_cached_body_coords_y[i]) {
-                displayError("ERROR", "Error: Failed to allocate memory for body cache arrays\n");
-                return;
-            }
-        }
-
-        gb->names = temp_names;
-        gb->mass = temp_mass;
-        gb->radius = temp_radius;
-        gb->pixel_radius = temp_pixel_radius;
-        gb->pos_x = temp_pos_x;
-        gb->pos_y = temp_pos_y;
-        gb->pixel_coordinates_x = temp_pixel_x;
-        gb->pixel_coordinates_y = temp_pixel_y;
-        gb->vel_x = temp_vel_x;
-        gb->vel_y = temp_vel_y;
-        gb->vel = temp_vel;
-        gb->acc_x = temp_acc_x;
-        gb->acc_y = temp_acc_y;
-        gb->acc_x_prev = temp_acc_x_prev;
-        gb->acc_y_prev = temp_acc_y_prev;
-        gb->force_x = temp_force_x;
-        gb->force_y = temp_force_y;
-        gb->kinetic_energy = temp_kinetic;
-        gb->cached_body_coords_x = temp_cached_body_coords_x;
-        gb->cached_body_coords_y = temp_cached_body_coords_y;
-        gb->capacity = new_capacity;
+    if (!temp_names || !temp_mass || !temp_radius || !temp_pixel_radius ||
+        !temp_pos_x || !temp_pos_y || !temp_pixel_x || !temp_pixel_y ||
+        !temp_vel_x || !temp_vel_y || !temp_vel || !temp_acc_x || !temp_acc_y ||
+        !temp_acc_x_prev || !temp_acc_y_prev || !temp_force_x || !temp_force_y || !temp_kinetic ||
+        !temp_cached_body_coords_x || !temp_cached_body_coords_y) {
+        displayError("ERROR", "Error: Failed to allocate memory for new body\n");
+        return;
     }
+
+    // allocate cache arrays for the new body
+    temp_cached_body_coords_x[gb->count] = (float*)calloc(PATH_CACHE_LENGTH, sizeof(float));
+    temp_cached_body_coords_y[gb->count] = (float*)calloc(PATH_CACHE_LENGTH, sizeof(float));
+    if (!temp_cached_body_coords_x[gb->count] || !temp_cached_body_coords_y[gb->count]) {
+        displayError("ERROR", "Error: Failed to allocate memory for body cache arrays\n");
+        return;
+    }
+
+    gb->names = temp_names;
+    gb->mass = temp_mass;
+    gb->radius = temp_radius;
+    gb->pixel_radius = temp_pixel_radius;
+    gb->pos_x = temp_pos_x;
+    gb->pos_y = temp_pos_y;
+    gb->pixel_coordinates_x = temp_pixel_x;
+    gb->pixel_coordinates_y = temp_pixel_y;
+    gb->vel_x = temp_vel_x;
+    gb->vel_y = temp_vel_y;
+    gb->vel = temp_vel;
+    gb->acc_x = temp_acc_x;
+    gb->acc_y = temp_acc_y;
+    gb->acc_x_prev = temp_acc_x_prev;
+    gb->acc_y_prev = temp_acc_y_prev;
+    gb->force_x = temp_force_x;
+    gb->force_y = temp_force_y;
+    gb->kinetic_energy = temp_kinetic;
+    gb->cached_body_coords_x = temp_cached_body_coords_x;
+    gb->cached_body_coords_y = temp_cached_body_coords_y;
 
     int idx = gb->count;
 
@@ -339,82 +339,79 @@ void craft_addSpacecraft(spacecraft_properties_t* sc, const char* name,
                         const double nozzle_gimbal_range,
                         const double burn_start_time, const double burn_duration,
                         const double burn_heading, const double burn_throttle) {
-    // check if we need to grow the capacity
-    if (sc->count >= sc->capacity) {
-        int new_capacity = sc->capacity == 0 ? 4 : sc->capacity * 2;
 
-        // reallocate all arrays
-        #define REALLOC_ARRAY(arr, type) (type*)realloc(sc->arr, new_capacity * sizeof(type))
+    int new_size = sc->count + 1;
 
-        char** temp_names = REALLOC_ARRAY(names, char*);
-        double* temp_current_mass = REALLOC_ARRAY(current_total_mass, double);
-        double* temp_dry_mass = REALLOC_ARRAY(dry_mass, double);
-        double* temp_fuel_mass = REALLOC_ARRAY(fuel_mass, double);
-        double* temp_pos_x = REALLOC_ARRAY(pos_x, double);
-        double* temp_pos_y = REALLOC_ARRAY(pos_y, double);
-        float* temp_pixel_x = REALLOC_ARRAY(pixel_coordinates_x, float);
-        float* temp_pixel_y = REALLOC_ARRAY(pixel_coordinates_y, float);
-        double* temp_attitude = REALLOC_ARRAY(attitude, double);
-        double* temp_vel_x = REALLOC_ARRAY(vel_x, double);
-        double* temp_vel_y = REALLOC_ARRAY(vel_y, double);
-        double* temp_vel = REALLOC_ARRAY(vel, double);
-        double* temp_rot_v = REALLOC_ARRAY(rotational_v, double);
-        double* temp_momentum = REALLOC_ARRAY(momentum, double);
-        double* temp_acc_x = REALLOC_ARRAY(acc_x, double);
-        double* temp_acc_y = REALLOC_ARRAY(acc_y, double);
-        double* temp_acc_x_prev = REALLOC_ARRAY(acc_x_prev, double);
-        double* temp_acc_y_prev = REALLOC_ARRAY(acc_y_prev, double);
-        double* temp_rot_a = REALLOC_ARRAY(rotational_a, double);
-        double* temp_moi = REALLOC_ARRAY(moment_of_inertia, double);
-        double* temp_grav_fx = REALLOC_ARRAY(grav_force_x, double);
-        double* temp_grav_fy = REALLOC_ARRAY(grav_force_y, double);
-        double* temp_torque = REALLOC_ARRAY(torque, double);
-        double* temp_thrust = REALLOC_ARRAY(thrust, double);
-        double* temp_mfr = REALLOC_ARRAY(mass_flow_rate, double);
-        double* temp_isp = REALLOC_ARRAY(specific_impulse, double);
-        double* temp_throttle = REALLOC_ARRAY(throttle, double);
-        double* temp_gimbal = REALLOC_ARRAY(nozzle_gimbal_range, double);
-        double* temp_nozzle_v = REALLOC_ARRAY(nozzle_velocity, double);
-        bool* temp_engine = REALLOC_ARRAY(engine_on, bool);
-        int* temp_num_burns = REALLOC_ARRAY(num_burns, int);
-        burn_properties_t** temp_burns = REALLOC_ARRAY(burn_properties, burn_properties_t*);
+    // reallocate all arrays
+    #define REALLOC_ARRAY(arr, type) (type*)realloc(sc->arr, new_size * sizeof(type))
 
-        #undef REALLOC_ARRAY
+    char** temp_names = REALLOC_ARRAY(names, char*);
+    double* temp_current_mass = REALLOC_ARRAY(current_total_mass, double);
+    double* temp_dry_mass = REALLOC_ARRAY(dry_mass, double);
+    double* temp_fuel_mass = REALLOC_ARRAY(fuel_mass, double);
+    double* temp_pos_x = REALLOC_ARRAY(pos_x, double);
+    double* temp_pos_y = REALLOC_ARRAY(pos_y, double);
+    float* temp_pixel_x = REALLOC_ARRAY(pixel_coordinates_x, float);
+    float* temp_pixel_y = REALLOC_ARRAY(pixel_coordinates_y, float);
+    double* temp_attitude = REALLOC_ARRAY(attitude, double);
+    double* temp_vel_x = REALLOC_ARRAY(vel_x, double);
+    double* temp_vel_y = REALLOC_ARRAY(vel_y, double);
+    double* temp_vel = REALLOC_ARRAY(vel, double);
+    double* temp_rot_v = REALLOC_ARRAY(rotational_v, double);
+    double* temp_momentum = REALLOC_ARRAY(momentum, double);
+    double* temp_acc_x = REALLOC_ARRAY(acc_x, double);
+    double* temp_acc_y = REALLOC_ARRAY(acc_y, double);
+    double* temp_acc_x_prev = REALLOC_ARRAY(acc_x_prev, double);
+    double* temp_acc_y_prev = REALLOC_ARRAY(acc_y_prev, double);
+    double* temp_rot_a = REALLOC_ARRAY(rotational_a, double);
+    double* temp_moi = REALLOC_ARRAY(moment_of_inertia, double);
+    double* temp_grav_fx = REALLOC_ARRAY(grav_force_x, double);
+    double* temp_grav_fy = REALLOC_ARRAY(grav_force_y, double);
+    double* temp_torque = REALLOC_ARRAY(torque, double);
+    double* temp_thrust = REALLOC_ARRAY(thrust, double);
+    double* temp_mfr = REALLOC_ARRAY(mass_flow_rate, double);
+    double* temp_isp = REALLOC_ARRAY(specific_impulse, double);
+    double* temp_throttle = REALLOC_ARRAY(throttle, double);
+    double* temp_gimbal = REALLOC_ARRAY(nozzle_gimbal_range, double);
+    double* temp_nozzle_v = REALLOC_ARRAY(nozzle_velocity, double);
+    bool* temp_engine = REALLOC_ARRAY(engine_on, bool);
+    int* temp_num_burns = REALLOC_ARRAY(num_burns, int);
+    burn_properties_t** temp_burns = REALLOC_ARRAY(burn_properties, burn_properties_t*);
 
-        sc->names = temp_names;
-        sc->current_total_mass = temp_current_mass;
-        sc->dry_mass = temp_dry_mass;
-        sc->fuel_mass = temp_fuel_mass;
-        sc->pos_x = temp_pos_x;
-        sc->pos_y = temp_pos_y;
-        sc->pixel_coordinates_x = temp_pixel_x;
-        sc->pixel_coordinates_y = temp_pixel_y;
-        sc->attitude = temp_attitude;
-        sc->vel_x = temp_vel_x;
-        sc->vel_y = temp_vel_y;
-        sc->vel = temp_vel;
-        sc->rotational_v = temp_rot_v;
-        sc->momentum = temp_momentum;
-        sc->acc_x = temp_acc_x;
-        sc->acc_y = temp_acc_y;
-        sc->acc_x_prev = temp_acc_x_prev;
-        sc->acc_y_prev = temp_acc_y_prev;
-        sc->rotational_a = temp_rot_a;
-        sc->moment_of_inertia = temp_moi;
-        sc->grav_force_x = temp_grav_fx;
-        sc->grav_force_y = temp_grav_fy;
-        sc->torque = temp_torque;
-        sc->thrust = temp_thrust;
-        sc->mass_flow_rate = temp_mfr;
-        sc->specific_impulse = temp_isp;
-        sc->throttle = temp_throttle;
-        sc->nozzle_gimbal_range = temp_gimbal;
-        sc->nozzle_velocity = temp_nozzle_v;
-        sc->engine_on = temp_engine;
-        sc->num_burns = temp_num_burns;
-        sc->burn_properties = temp_burns;
-        sc->capacity = new_capacity;
-    }
+    #undef REALLOC_ARRAY
+
+    sc->names = temp_names;
+    sc->current_total_mass = temp_current_mass;
+    sc->dry_mass = temp_dry_mass;
+    sc->fuel_mass = temp_fuel_mass;
+    sc->pos_x = temp_pos_x;
+    sc->pos_y = temp_pos_y;
+    sc->pixel_coordinates_x = temp_pixel_x;
+    sc->pixel_coordinates_y = temp_pixel_y;
+    sc->attitude = temp_attitude;
+    sc->vel_x = temp_vel_x;
+    sc->vel_y = temp_vel_y;
+    sc->vel = temp_vel;
+    sc->rotational_v = temp_rot_v;
+    sc->momentum = temp_momentum;
+    sc->acc_x = temp_acc_x;
+    sc->acc_y = temp_acc_y;
+    sc->acc_x_prev = temp_acc_x_prev;
+    sc->acc_y_prev = temp_acc_y_prev;
+    sc->rotational_a = temp_rot_a;
+    sc->moment_of_inertia = temp_moi;
+    sc->grav_force_x = temp_grav_fx;
+    sc->grav_force_y = temp_grav_fy;
+    sc->torque = temp_torque;
+    sc->thrust = temp_thrust;
+    sc->mass_flow_rate = temp_mfr;
+    sc->specific_impulse = temp_isp;
+    sc->throttle = temp_throttle;
+    sc->nozzle_gimbal_range = temp_gimbal;
+    sc->nozzle_velocity = temp_nozzle_v;
+    sc->engine_on = temp_engine;
+    sc->num_burns = temp_num_burns;
+    sc->burn_properties = temp_burns;
 
     int idx = sc->count;
 
@@ -476,9 +473,11 @@ void craft_transformCoordinates(const spacecraft_properties_t* sc, const int i, 
 // LOGIC FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // reset the simulation by removing all bodies from the system
-void resetSim(double* sim_time, body_properties_t* gb, spacecraft_properties_t* sc) {
+void resetSim(window_params_t* wp, body_properties_t* gb, spacecraft_properties_t* sc) {
     // reset simulation time to 0
-    *sim_time = 0;
+    wp->sim_time = 0;
+    // change sim reset flag back to false
+    wp->reset_sim = false;
 
     // free all bodies from memory
     if (gb != NULL) {
@@ -488,15 +487,9 @@ void resetSim(double* sim_time, body_properties_t* gb, spacecraft_properties_t* 
 
         // free cache arrays for each body
         if (gb->cached_body_coords_x != NULL) {
-            for (int i = 0; i < gb->capacity; i++) {
-                free(gb->cached_body_coords_x[i]);
-            }
             free(gb->cached_body_coords_x);
         }
         if (gb->cached_body_coords_y != NULL) {
-            for (int i = 0; i < gb->capacity; i++) {
-                free(gb->cached_body_coords_y[i]);
-            }
             free(gb->cached_body_coords_y);
         }
 
@@ -520,7 +513,6 @@ void resetSim(double* sim_time, body_properties_t* gb, spacecraft_properties_t* 
         free(gb->kinetic_energy);
 
         gb->count = 0;
-        gb->capacity = 0;
         gb->names = NULL;
         gb->mass = NULL;
         gb->radius = NULL;
@@ -541,6 +533,8 @@ void resetSim(double* sim_time, body_properties_t* gb, spacecraft_properties_t* 
         gb->kinetic_energy = NULL;
         gb->cached_body_coords_x = NULL;
         gb->cached_body_coords_y = NULL;
+        gb->cache_counter = 0;
+        gb->cache_valid_count = 0;
     }
 
     // free all craft from memory
@@ -583,7 +577,6 @@ void resetSim(double* sim_time, body_properties_t* gb, spacecraft_properties_t* 
         free(sc->burn_properties);
 
         sc->count = 0;
-        sc->capacity = 0;
         sc->names = NULL;
         sc->current_total_mass = NULL;
         sc->dry_mass = NULL;
@@ -640,7 +633,7 @@ void runCalculations(const body_properties_t* gb, const spacecraft_properties_t*
             // loop through every body and add the resultant force to the subject body force vector
             for (int i = 0; i < gb->count; i++) {
                 for (int j = i + 1; j < gb->count; j++) {
-                    body_calculateGravForce(gb, i, j);
+                    body_calculateGravForce(gb, i, j, wp);
                 }
             }
 

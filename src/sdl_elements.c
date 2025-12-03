@@ -524,7 +524,7 @@ static void handleMouseWheelEvent(const SDL_Event* event, window_params_t* wp, c
 }
 
 // handles keyboard events (pause/play, reset)
-static void handleKeyboardEvent(const SDL_Event* event, window_params_t* wp, body_properties_t* gb, spacecraft_properties_t* sc) {
+static void handleKeyboardEvent(const SDL_Event* event, window_params_t* wp) {
     if(event->key.key == SDLK_SPACE) {
         if (wp->sim_running == false) {
             wp->sim_running = true;
@@ -534,7 +534,7 @@ static void handleKeyboardEvent(const SDL_Event* event, window_params_t* wp, bod
         }
     }
     else if (event->key.key == SDLK_R) {
-        resetSim(&wp->sim_time, gb, sc);
+        wp->reset_sim = true;
     }
 }
 
@@ -583,7 +583,7 @@ void runEventCheck(SDL_Event* event, window_params_t* wp, body_properties_t* gb,
         }
         // check if keyboard key is pressed
         else if (event->type == SDL_EVENT_KEY_DOWN && event->window.windowID == wp->main_window_ID) {
-            handleKeyboardEvent(event, wp, gb, sc);
+            handleKeyboardEvent(event, wp);
         }
         // check if window is resized (only for main window)
         else if (event->type == SDL_EVENT_WINDOW_RESIZED &&

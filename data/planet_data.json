@@ -10,94 +10,13 @@
       "radius": 71492000
     },
     {
-      "name": "Metis",
+      "name": "Planet 1",
       "mass": 3.6e16,
-      "pos_x": 128000000,
+      "pos_x": 1280000000,
       "pos_y": 0,
       "vel_x": 0,
-      "vel_y": 31500,
+      "vel_y": 0,
       "radius": 21500
-    },
-    {
-      "name": "Adrastea",
-      "mass": 2e15,
-      "pos_x": 129000000,
-      "pos_y": 0,
-      "vel_x": 0,
-      "vel_y": 31400,
-      "radius": 8500
-    },
-    {
-      "name": "Amalthea",
-      "mass": 2.08e18,
-      "pos_x": 181400000,
-      "pos_y": 0,
-      "vel_x": 0,
-      "vel_y": 26500,
-      "radius": 83500
-    },
-    {
-      "name": "Thebe",
-      "mass": 4.3e17,
-      "pos_x": 222000000,
-      "pos_y": 0,
-      "vel_x": 0,
-      "vel_y": 23900,
-      "radius": 49300
-    },
-    {
-      "name": "Io",
-      "mass": 8.93e22,
-      "pos_x": 421800000,
-      "pos_y": 0,
-      "vel_x": 0,
-      "vel_y": 17334,
-      "radius": 1821600
-    },
-    {
-      "name": "Europa",
-      "mass": 4.8e22,
-      "pos_x": 671100000,
-      "pos_y": 0,
-      "vel_x": 0,
-      "vel_y": 13740,
-      "radius": 1560000
-    },
-    {
-      "name": "Ganymede",
-      "mass": 1.48e23,
-      "pos_x": 1070400000,
-      "pos_y": 0,
-      "vel_x": 0,
-      "vel_y": 10880,
-      "radius": 2635000
-    },
-    {
-      "name": "Callisto",
-      "mass": 1.08e23,
-      "pos_x": 1882700000,
-      "pos_y": 0,
-      "vel_x": 0,
-      "vel_y": 8204,
-      "radius": 2400000
-    },
-    {
-      "name": "Themisto",
-      "mass": 6.9e14,
-      "pos_x": 7507000000,
-      "pos_y": 0,
-      "vel_x": 0,
-      "vel_y": 4100,
-      "radius": 4000
-    },
-    {
-      "name": "Himalia",
-      "mass": 4.2e18,
-      "pos_x": 11461000000,
-      "pos_y": 0,
-      "vel_x": 0,
-      "vel_y": 3312,
-      "radius": 85000
     }
   ]
 }

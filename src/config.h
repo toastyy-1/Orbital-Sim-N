@@ -22,6 +22,8 @@ typedef struct {
     float drag_origin_x;
     float drag_origin_y;
 
+    bool reset_sim;
+
     bool is_zooming;
 } window_params_t;
 
@@ -30,7 +32,6 @@ typedef struct {
 // orbital bodies
 typedef struct {
     int count;
-    int capacity;
 
     char** names;
     double* mass;
@@ -67,7 +68,6 @@ typedef struct {
 // spacecraft
 typedef struct {
     int count;
-    int capacity;
 
     char** names;
 

@@ -63,6 +63,7 @@ int main(int argc, char *argv[]) {
     // initialize UI elements
     button_storage_t buttons;
     initButtons(&buttons, wp);
+    stats_window_t stats_window = {0};
 
     // initialize SDL3 window
     // create an SDL window
@@ -81,9 +82,6 @@ int main(int argc, char *argv[]) {
     TTF_Init();
     g_font = TTF_OpenFont("CascadiaCode.ttf", wp.font_size);
     g_font_small = TTF_OpenFont("CascadiaCode.ttf", (float)wp.window_size_x / 90);
-
-    // toggleable stats window
-    stats_window_t stats_window = {0};
 
     ////////////////////////////////////////
     // SIM VARS                           //
@@ -110,6 +108,8 @@ int main(int argc, char *argv[]) {
     // creates the sim thread
     if (pthread_create(&simThread, NULL, physicsSim, &ps_args) != 0) {
         displayError("ERROR", "Error when creating physics simulation process");
+        wp.sim_running = false;
+        wp.window_open = false;
         return 1;
     }
 
@@ -147,14 +147,15 @@ int main(int argc, char *argv[]) {
         craft_renderCrafts(renderer, &sc);
 
         // render stats in main window if enabled
-        if (stats_window.is_shown) {
-            renderStatsBox(renderer, &gb, &sc, wp, &stats_window);
-        }
+        if (stats_window.is_shown) renderStatsBox(renderer, &gb, &sc, wp, &stats_window);
+
+        // check if sim needs to be reset
+        if (wp.reset_sim) resetSim(&wp, &gb, &sc);
 
         // unlock sim vars mutex when done
         pthread_mutex_unlock(&sim_vars_mutex);
 
-        // shows and limits FPS
+        // limits FPS
         showFPS(renderer, frame_start, perf_freq, wp, false);
 
         // present the renderer to the screen

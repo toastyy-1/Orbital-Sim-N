@@ -174,6 +174,21 @@ void cleanup(void* args) {
     for (int i = 0; i < c->gb->count; i++) {
         free(c->gb->names[i]);
     }
+
+    // free cache arrays for each body
+    if (c->gb->cached_body_coords_x != NULL) {
+        for (int i = 0; i < c->gb->count; i++) {
+            free(c->gb->cached_body_coords_x[i]);
+        }
+        free(c->gb->cached_body_coords_x);
+    }
+    if (c->gb->cached_body_coords_y != NULL) {
+        for (int i = 0; i < c->gb->count; i++) {
+            free(c->gb->cached_body_coords_y[i]);
+        }
+        free(c->gb->cached_body_coords_y);
+    }
+
     free(c->gb->names);
     free(c->gb->mass);
     free(c->gb->radius);
