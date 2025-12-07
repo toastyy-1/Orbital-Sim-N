@@ -136,8 +136,6 @@ typedef struct {
 
 
 
-void readBodyJSON(const char* FILENAME, body_properties_t* gb);
-void readSpacecraftJSON(const char* FILENAME, spacecraft_properties_t* sc);
 void readSimulationJSON(const char* FILENAME, body_properties_t* gb, spacecraft_properties_t* sc);
 
 

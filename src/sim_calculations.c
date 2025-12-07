@@ -348,8 +348,7 @@ void craft_addSpacecraft(spacecraft_properties_t* sc, const char* name,
                         const double specific_impulse, const double mass_flow_rate,
                         const double attitude, const double moment_of_inertia,
                         const double nozzle_gimbal_range,
-                        const double burn_start_time, const double burn_duration,
-                        const double burn_heading, const double burn_throttle) {
+                        burn_properties_t* burns, const int num_burns) {
 
     int new_size = sc->count + 1;
 
@@ -461,13 +460,16 @@ void craft_addSpacecraft(spacecraft_properties_t* sc, const char* name,
     sc->nozzle_gimbal_range[idx] = nozzle_gimbal_range;
     sc->nozzle_velocity[idx] = 0.0;
 
-    // initialize burn schedule with a single burn
-    sc->num_burns[idx] = 1;
-    sc->burn_properties[idx] = (burn_properties_t*)malloc(sizeof(burn_properties_t));
-    sc->burn_properties[idx][0].burn_start_time = burn_start_time;
-    sc->burn_properties[idx][0].burn_end_time = burn_start_time + burn_duration;
-    sc->burn_properties[idx][0].throttle = burn_throttle;
-    sc->burn_properties[idx][0].burn_heading = burn_heading;
+    // initialize burn schedule with provided burns
+    sc->num_burns[idx] = num_burns;
+    if (num_burns > 0) {
+        sc->burn_properties[idx] = (burn_properties_t*)malloc(num_burns * sizeof(burn_properties_t));
+        for (int i = 0; i < num_burns; i++) {
+            sc->burn_properties[idx][i] = burns[i];
+        }
+    } else {
+        sc->burn_properties[idx] = NULL;
+    }
 
     // increment the craft count
     sc->count++;
