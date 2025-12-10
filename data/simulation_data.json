@@ -1,0 +1,63 @@
+{
+  "bodies": [
+    {
+      "name": "Earth",
+      "mass": 5.972e24,
+      "pos_x": 0,
+      "pos_y": 0,
+      "vel_x": 0,
+      "vel_y": 0,
+      "radius": 6371000
+    },
+    {
+      "name": "Moon",
+      "mass": 7.342e22,
+      "pos_x": 384400000,
+      "pos_y": 0,
+      "vel_x": 0,
+      "vel_y": 1022,
+      "radius": 1737000
+    }
+  ],
+  "spacecraft": [
+    {
+      "name": "Apollo Test Craft",
+
+      "pos_x": 6671000.0,
+      "pos_y": 0.0,
+      "vel_x": 0.0,
+      "vel_y": 7700.0,
+
+      "dry_mass": 5500.0,
+      "fuel_mass": 18000.0,
+      "thrust": 450000.0,
+      "specific_impulse": 314.0,
+      "mass_flow_rate": 146.0,
+
+      "attitude": 0.0,
+      "moment_of_inertia": 20000.0,
+      "nozzle_gimbal_range": 0.105,
+
+      "burns": [
+        {
+          "start_time": 100.0,
+          "duration": 30.0,
+          "heading": 1.5708,
+          "throttle": 1.0
+        },
+        {
+          "start_time": 500.0,
+          "duration": 45.0,
+          "heading": 3.14159,
+          "throttle": 0.8
+        },
+        {
+          "start_time": 1000.0,
+          "duration": 60.0,
+          "heading": 0.0,
+          "throttle": 0.5
+        }
+      ]
+    }
+  ]
+}
