@@ -23,8 +23,11 @@ typedef struct {
     float drag_origin_y;
 
     bool reset_sim;
-
     bool is_zooming;
+
+    // which view is shown to the user at any given moment
+    bool craft_view_shown;
+    bool main_view_shown;
 } window_params_t;
 
 #define PATH_CACHE_LENGTH 100

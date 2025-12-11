@@ -348,7 +348,7 @@ void craft_addSpacecraft(spacecraft_properties_t* sc, const char* name,
                         const double specific_impulse, const double mass_flow_rate,
                         const double attitude, const double moment_of_inertia,
                         const double nozzle_gimbal_range,
-                        burn_properties_t* burns, const int num_burns) {
+                        const burn_properties_t* burns, const int num_burns) {
 
     int new_size = sc->count + 1;
 

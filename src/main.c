@@ -115,21 +115,13 @@ int main(int argc, char *argv[]) {
     // simulation loop                                    //
     ////////////////////////////////////////////////////////
     while (wp.window_open) {
+
         // measure frame start time
         frame_start = SDL_GetPerformanceCounter();
 
         // clears previous frame from the screen
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
-
-        // draw scale reference bar
-        drawScaleBar(renderer, wp);
-
-        // draw speed control button
-        renderUIButtons(renderer, &buttons, &wp);
-
-        // draw time indicator text
-        renderTimeIndicators(renderer, wp);
 
         // lock body_sim mutex for reading
         pthread_mutex_lock(&sim_vars_mutex);
@@ -138,14 +130,31 @@ int main(int argc, char *argv[]) {
         SDL_Event event;
         runEventCheck(&event, &wp, &gb, &sc, &buttons, &stats_window);
 
-        // render the bodies
-        body_renderOrbitBodies(renderer, &gb, &wp);
+        // draw speed control button
+        renderUIButtons(renderer, &buttons, &wp);
 
-        // render the spacecraft
-        craft_renderCrafts(renderer, &sc);
+        // if the main view is shown, do the respective rendering functions
+        if (wp.main_view_shown && !wp.craft_view_shown) {
+            // draw scale reference bar
+            drawScaleBar(renderer, wp);
 
-        // render stats in main window if enabled
-        if (stats_window.is_shown) renderStatsBox(renderer, &gb, &sc, wp, &stats_window);
+            // draw time indicator text
+            renderTimeIndicators(renderer, wp);
+
+            // render the bodies
+            body_renderOrbitBodies(renderer, &gb, &wp);
+
+            // render the spacecraft
+            craft_renderCrafts(renderer, &sc);
+
+            // render stats in main window if enabled
+            if (stats_window.is_shown) renderStatsBox(renderer, &gb, &sc, wp, &stats_window);
+        }
+
+        // if the craft view is shown, do the respective rendering functions
+        if (wp.craft_view_shown) {
+            craft_RenderCraftView(renderer, &wp);
+        }
 
         // check if sim needs to be reset
         if (wp.reset_sim) resetSim(&wp, &gb, &sc);

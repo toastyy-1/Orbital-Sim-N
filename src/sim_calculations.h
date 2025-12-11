@@ -31,7 +31,7 @@ void craft_addSpacecraft(spacecraft_properties_t* sc, const char* name,
                         double specific_impulse, double mass_flow_rate,
                         double attitude, double moment_of_inertia,
                         double nozzle_gimbal_range,
-                        burn_properties_t* burns, int num_burns);
+                        const burn_properties_t* burns, int num_burns);
 
 void runCalculations(const body_properties_t* gb, const spacecraft_properties_t* sc, window_params_t* wp); // MAIN CALCULATION LOOP -- DOES ALL THE MATH
 

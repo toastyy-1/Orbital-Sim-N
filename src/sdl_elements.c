@@ -3,6 +3,7 @@
 #include <math.h>
 #include <stdio.h>
 #include "config.h"
+#include "craft_view.h"
 
 SDL_Color TEXT_COLOR = {240, 240, 245, 255};
 SDL_Color BUTTON_COLOR = {45, 52, 70, 255};
@@ -31,6 +32,9 @@ void init_window_params(window_params_t* wp) {
     wp->drag_start_y = 0;
     wp->drag_origin_x = 0;
     wp->drag_origin_y = 0;
+
+    wp->main_view_shown = true;
+    wp->craft_view_shown = false;
 }
 
 // draw a circle in SDL
@@ -272,7 +276,7 @@ void initButtons(button_storage_t* buttons, const window_params_t wp) {
     buttons->sc_button = (button_t){
         .x = margin,
         .y = margin,
-        .width = wp.window_size_x * 0.22f,
+        .width = wp.window_size_x * 0.26f,
         .height = button_height,
         .is_hovered = false,
         .normal_color = BUTTON_COLOR,
@@ -290,10 +294,21 @@ void initButtons(button_storage_t* buttons, const window_params_t wp) {
         .hover_color = BUTTON_HOVER_COLOR
     };
 
-    // show stats window button (above csv button)
-    buttons->show_stats_button = (button_t){
+    // craft view button (above csv button)
+    buttons->craft_view_button = (button_t){
         .x = buttons->csv_load_button.x,
         .y = buttons->csv_load_button.y - button_height - button_spacing,
+        .width = side_button_width,
+        .height = button_height,
+        .is_hovered = false,
+        .normal_color = BUTTON_COLOR,
+        .hover_color = BUTTON_HOVER_COLOR
+    };
+
+    // show stats window button (above craft view button)
+    buttons->show_stats_button = (button_t){
+        .x = buttons->craft_view_button.x,
+        .y = buttons->craft_view_button.y - button_height - button_spacing,
         .width = side_button_width,
         .height = button_height,
         .is_hovered = false,
@@ -304,15 +319,19 @@ void initButtons(button_storage_t* buttons, const window_params_t wp) {
 
 // renders all the buttons on the screen, this function holds all button drawing logic
 // remember: you must add this button to the event handling logic for it to work!!!
-// remember: you must add each button to the button_storage_t struct!
+// remember: you must add each button to the button_storage_t struct!!
+// remember: you must add this to initButtons!
 void renderUIButtons(SDL_Renderer* renderer, const button_storage_t* buttons, const window_params_t* wp) {
     // speed control button
     char speed_text[32];
-    snprintf(speed_text, sizeof(speed_text), "Time Step: %.2f s", wp->time_step);
+    snprintf(speed_text, sizeof(speed_text), "Time Step: %.5f s", wp->time_step);
     renderButton(renderer, &buttons->sc_button, speed_text);
 
     // csv loading button
     renderButton(renderer, &buttons->csv_load_button, "Load CSV");
+
+    // craft view button
+    renderButton(renderer, &buttons->craft_view_button, "Craft View");
 
     // show stats window button
     renderButton(renderer, &buttons->show_stats_button, "Stats");
@@ -462,6 +481,10 @@ static void handleMouseMotionEvent(const SDL_Event* event, window_params_t* wp, 
     buttons->show_stats_button.is_hovered = isMouseInRect(mouse_x, mouse_y,
         (int)buttons->show_stats_button.x, (int)buttons->show_stats_button.y,
         (int)buttons->show_stats_button.width, (int)buttons->show_stats_button.height);
+    // update hover state for craft view button
+    buttons->craft_view_button.is_hovered = isMouseInRect(mouse_x, mouse_y,
+        (int)buttons->craft_view_button.x, (int)buttons->craft_view_button.y,
+        (int)buttons->craft_view_button.width, (int)buttons->craft_view_button.height);
 }
 
 // handles mouse button down events (button clicks and drag start)
@@ -485,6 +508,15 @@ static void handleMouseButtonDownEvent(const SDL_Event* event, window_params_t* 
     else if(buttons->show_stats_button.is_hovered) {
         // toggle stats display in main window
         stats_window->is_shown = !stats_window->is_shown;
+    }
+    else if (buttons->craft_view_button.is_hovered) {
+        // toggle zoomed in view of craft
+        if (!wp->craft_view_shown) {
+            wp->craft_view_shown = true;
+        }
+        else {
+            wp->craft_view_shown = false;
+        }
     }
 }
 

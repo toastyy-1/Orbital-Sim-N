@@ -66,6 +66,8 @@ set(SOURCES
         src/sim_calculations.h
         src/sdl_elements.h
         src/config.c
+        src/craft_view.c
+        src/craft_view.h
 )
 
 # Create executable
