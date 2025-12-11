@@ -60,14 +60,19 @@ endif()
 # Source files (no need for separate HEADERS variable)
 set(SOURCES
         src/main.c
-        src/sim_calculations.c
-        src/sdl_elements.c
-        src/config.h
-        src/sim_calculations.h
-        src/sdl_elements.h
-        src/config.c
-        src/craft_view.c
-        src/craft_view.h
+        src/types.h
+        src/globals.h
+        src/globals.c
+        src/bodies.h
+        src/bodies.c
+        src/spacecraft.h
+        src/spacecraft.c
+        src/renderer.h
+        src/renderer.c
+        src/json_loader.h
+        src/json_loader.c
+        src/simulation.h
+        src/simulation.c
 )
 
 # Create executable

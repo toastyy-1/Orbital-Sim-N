@@ -1,7 +1,4 @@
-#include "globals.h"
-#include "types.h"
-#include "simulation.h"
-#include "renderer.h"
+#include "config.h"
 #ifdef _WIN32
     #include <windows.h>
 #else
@@ -13,15 +10,45 @@
 #include <SDL3/SDL_main.h>
 #include <SDL3_ttf/SDL_ttf.h>
 #include <stdbool.h>
+#include "sim_calculations.h"
+#include "sdl_elements.h"
 
 // NOTE: ALL CALCULATIONS SHOULD BE DONE IN BASE SI UNITS
+
+// universal gravitation constant
+char* SIMULATION_FILENAME = "simulation_data.json";
+
+TTF_Font* g_font = NULL;
+TTF_Font* g_font_small = NULL;
+
+pthread_mutex_t sim_vars_mutex;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// SIM CALCULATION FUNCTION
+////////////////////////////////////////////////////////////////////////////////////////////////////
+void* physicsSim(void* args) {
+    const physics_sim_args* s = (physics_sim_args*)args;
+    while (s->wp->window_open) {
+        while (s->wp->sim_running) {
+            // lock mutex before accessing data
+            pthread_mutex_lock(&sim_vars_mutex);
+
+            // IMPORTANT -- DOES ALL BODY CALCULATIONS:
+            runCalculations(s->gb, s->sc, s->wp);
+
+            // unlock mutex when done :)
+            pthread_mutex_unlock(&sim_vars_mutex);
+        }
+    }
+    return NULL;
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // MAIN :)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 int main(int argc, char *argv[]) {
-    (void)argc;
-    (void)argv;
+    (void)argc;  // Unused parameter
+    (void)argv;  // Unused parameter
     ////////////////////////////////////////
     // INIT                               //
     ////////////////////////////////////////
