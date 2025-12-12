@@ -2,6 +2,7 @@
 #include "types.h"
 #include "sim/simulation.h"
 #include "gui/renderer.h"
+#include "gui/craft_view.h"
 #ifdef _WIN32
     #include <windows.h>
 #else
@@ -106,13 +107,13 @@ int main(int argc, char *argv[]) {
         // draw speed control button
         renderUIButtons(renderer, &buttons, &wp);
 
+        // draw time indicator text
+        renderTimeIndicators(renderer, wp);
+
         // if the main view is shown, do the respective rendering functions
         if (wp.main_view_shown && !wp.craft_view_shown) {
             // draw scale reference bar
             drawScaleBar(renderer, wp);
-
-            // draw time indicator text
-            renderTimeIndicators(renderer, wp);
 
             // render the bodies
             body_renderOrbitBodies(renderer, &gb, &wp);
@@ -126,7 +127,7 @@ int main(int argc, char *argv[]) {
 
         // if the craft view is shown, do the respective rendering functions
         if (wp.craft_view_shown) {
-            craft_RenderCraftView(renderer, &wp);
+            craft_RenderCraftView(renderer, &wp, &gb, &sc);
         }
 
         // check if sim needs to be reset

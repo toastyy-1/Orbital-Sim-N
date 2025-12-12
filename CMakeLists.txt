@@ -73,6 +73,8 @@ set(SOURCES
         src/utility/json_loader.c
         src/sim/simulation.h
         src/sim/simulation.c
+        src/gui/craft_view.c
+        src/gui/craft_view.h
 )
 
 # Create executable

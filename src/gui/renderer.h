@@ -22,8 +22,6 @@ void initButtons(button_storage_t* buttons, window_params_t wp);
 void init_window_params(window_params_t* wp);
 void displayError(const char* title, const char* message);
 void showFPS(SDL_Renderer* renderer, Uint64 frame_start_time, Uint64 perf_freq, window_params_t wp, bool FPS_SHOWN);
-void craft_RenderCraftView(SDL_Renderer* renderer, window_params_t* wp);
-void craft_DrawCraft(SDL_Renderer* renderer, window_params_t* wp);
 void runEventCheck(SDL_Event* event, window_params_t* wp, body_properties_t* bodies, spacecraft_properties_t* sc, button_storage_t* buttons, stats_window_t* stats_window);
 void renderStatsBox(SDL_Renderer* renderer, body_properties_t* bodies, const spacecraft_properties_t* sc, window_params_t wp, stats_window_t* stats_window);
 

@@ -40,22 +40,16 @@
 
       "burns": [
         {
-          "start_time": 100.0,
-          "duration": 30.0,
-          "heading": 1.5708,
-          "throttle": 1.0
-        },
-        {
-          "start_time": 500.0,
-          "duration": 45.0,
-          "heading": 3.14159,
-          "throttle": 0.8
-        },
-        {
-          "start_time": 1000.0,
-          "duration": 60.0,
+          "start_time": 0.0,
+          "duration": 0.0,
           "heading": 0.0,
-          "throttle": 0.5
+          "throttle": 0.0
+        },
+        {
+          "start_time": 0.0,
+          "duration": 0.0,
+          "heading": 0,
+          "throttle": 0.0
         }
       ]
     }

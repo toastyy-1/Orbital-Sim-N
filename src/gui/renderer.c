@@ -2,6 +2,7 @@
 #include "../globals.h"
 #include "../sim/bodies.h"
 #include "../sim/simulation.h"
+#include "craft_view.h"
 #include <math.h>
 #include <stdio.h>
 
@@ -536,17 +537,6 @@ void renderStatsBox(SDL_Renderer* renderer, body_properties_t* bodies, const spa
     if (stats_window->frame_counter >= 15) {
         stats_window->frame_counter = 0;
     }
-}
-
-// draws the shape of the craft in the craft view
-void craft_DrawCraft(SDL_Renderer* renderer, window_params_t* wp) {
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    SDL_WriteText(renderer, g_font, "Hello", 67, 67, (SDL_Color){240, 240, 245, 255});
-}
-
-// toggleable craft view window
-void craft_RenderCraftView(SDL_Renderer* renderer, window_params_t* wp) {
-    craft_DrawCraft(renderer, wp);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
