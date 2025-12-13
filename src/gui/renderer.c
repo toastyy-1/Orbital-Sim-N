@@ -657,16 +657,50 @@ static void handleKeyboardEvent(const SDL_Event* event, window_params_t* wp) {
 
 // handles window resize events
 static void handleWindowResizeEvent(const SDL_Event* event, window_params_t* wp, button_storage_t* buttons) {
+    // store old font size to check if it changed
+    static float last_font_size = 0.0f;
+    static float last_small_font_size = 0.0f;
+
     wp->window_size_x = (float)event->window.data1;
     wp->window_size_y = (float)event->window.data2;
     wp->screen_origin_x = wp->window_size_x / 2;
     wp->screen_origin_y = wp->window_size_y / 2;
 
-    // update font size proportionally
+    // calculate new font sizes with minimum size validation
     wp->font_size = wp->window_size_x / 75;
-    if (g_font) TTF_CloseFont(g_font);
-    g_font = TTF_OpenFont("assets/font.ttf", wp->font_size);
-    if (g_font) TTF_SetFontHinting(g_font, TTF_HINTING_NORMAL);
+    if (wp->font_size < 8.0f) wp->font_size = 8.0f;  // minimum font size
+
+    float small_font_size = (float)wp->window_size_x / 90;
+    if (small_font_size < 6.0f) small_font_size = 6.0f;  // minimum small font size
+
+    // only reload fonts if size actually changed (prevents rapid reload during resize)
+    if (fabsf(wp->font_size - last_font_size) > 0.5f) {
+        TTF_Font* new_font = TTF_OpenFont("font.ttf", wp->font_size);
+        if (!new_font) {
+            fprintf(stderr, "Failed to load font during resize (size: %.1f): %s\n", wp->font_size, SDL_GetError());
+            // keep the old font if new one fails to load
+        } else {
+            // only close old font after successfully loading new one
+            if (g_font) TTF_CloseFont(g_font);
+            g_font = new_font;
+            TTF_SetFontHinting(g_font, TTF_HINTING_NORMAL);
+            last_font_size = wp->font_size;
+        }
+    }
+
+    if (fabsf(small_font_size - last_small_font_size) > 0.5f) {
+        TTF_Font* new_font_small = TTF_OpenFont("font.ttf", small_font_size);
+        if (!new_font_small) {
+            fprintf(stderr, "Failed to load small font during resize (size: %.1f): %s\n", small_font_size, SDL_GetError());
+            // keep the old font if new one fails to load
+        } else {
+            // only close old font after successfully loading new one
+            if (g_font_small) TTF_CloseFont(g_font_small);
+            g_font_small = new_font_small;
+            TTF_SetFontHinting(g_font_small, TTF_HINTING_NORMAL);
+            last_small_font_size = small_font_size;
+        }
+    }
 
     // destroy old button textures before reinitializing
     destroyAllButtonTextures(buttons);
