@@ -63,6 +63,7 @@ void craft_calculateGravForce(const spacecraft_properties_t* sc, const int i, co
     const double r_cubed = r_squared * r;
     const double force_factor = (G * sc->current_total_mass[i] * bodies->mass[j]) / r_cubed;
 
+    // apply the force to the craft
     sc->grav_force_x[i] += force_factor * delta_pos_x;
     sc->grav_force_y[i] += force_factor * delta_pos_y;
 }

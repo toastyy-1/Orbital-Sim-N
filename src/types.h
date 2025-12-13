@@ -10,7 +10,7 @@ typedef struct {
     int screen_width, screen_height;
     double time_step;
     float window_size_x, window_size_y;
-    float screen_origin_x, screen_origin_y;
+    float screen_origin_x, screen_origin_y; // the center of the screen in both directions
     double meters_per_pixel;
     float font_size;
     bool window_open;

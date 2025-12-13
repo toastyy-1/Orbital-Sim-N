@@ -40,10 +40,10 @@
 
       "burns": [
         {
-          "start_time": 0.0,
-          "duration": 0.0,
-          "heading": 0.0,
-          "throttle": 0.0
+          "start_time": 3600.0,
+          "duration": 1000.0,
+          "heading": 3.14159,
+          "throttle": 1.0
         },
         {
           "start_time": 0.0,

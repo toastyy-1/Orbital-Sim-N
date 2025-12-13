@@ -9,6 +9,7 @@ extern TTF_Font* g_font;
 extern TTF_Font* g_font_small;
 extern pthread_mutex_t sim_vars_mutex;
 extern const double G;
+extern const double M_PI;
 extern char* SIMULATION_FILENAME;
 
 extern SDL_Color TEXT_COLOR;

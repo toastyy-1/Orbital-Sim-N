@@ -117,7 +117,7 @@ int main(int argc, char *argv[]) {
 
             // render the bodies
             body_renderOrbitBodies(renderer, &gb, &wp);
-
+//
             // render the spacecraft
             craft_renderCrafts(renderer, &sc);
 
