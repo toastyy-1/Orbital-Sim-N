@@ -90,8 +90,8 @@ const float vertical_desc_text_buffer = 15;
 // draws the arrows that point to planets and their distances relative to the craft
 void craft_DrawRelativeArrows(SDL_Renderer* renderer, const window_params_t* wp, const body_properties_t* gb, const spacecraft_properties_t* sc, const int craft_id) {
     if (sc != NULL && sc->count > 0 && gb != NULL && gb->count > 0) {
-        const float center_x = wp->screen_origin_x;
-        const float center_y = wp->screen_origin_y;
+        const float center_x = wp->window_size_x / 2.0f;
+        const float center_y = wp->window_size_y / 2.0f;
 
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
 
@@ -118,8 +118,8 @@ void craft_DrawRelativeArrows(SDL_Renderer* renderer, const window_params_t* wp,
 // draws the craft's velocity, thrust, etc. arrows
 void craft_drawCraftPropertyArrows(SDL_Renderer* renderer, const window_params_t* wp, const body_properties_t* gb, const spacecraft_properties_t* sc, const int craft_id) {
     if (sc != NULL && sc->count > 0 && gb != NULL && gb->count > 0) {
-        const float center_x = wp->screen_origin_x;
-        const float center_y = wp->screen_origin_y;
+        const float center_x = wp->window_size_x / 2.0f;
+        const float center_y = wp->window_size_y / 2.0f;
 
         const float arrow_length = 100.0f;
 
