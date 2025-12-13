@@ -101,7 +101,7 @@ void craft_DrawRelativeArrows(SDL_Renderer* renderer, const window_params_t* wp,
             const rel_body_vector_t body_vector = craft_calcVectorToBody(sc, gb, craft_id, i);
 
             char dist_text[32];
-            snprintf(dist_text, sizeof(dist_text), "%.1f km", body_vector.distance / 1000.0f);
+            snprintf(dist_text, sizeof(dist_text), "%.1f km", (body_vector.distance - gb->radius[i]) / 1000.0f);
 
             // create a fixed-length arrow pointing in the direction of the body
             const float pointer_ending_x = center_x + arrow_length * cosf((float)body_vector.heading);
