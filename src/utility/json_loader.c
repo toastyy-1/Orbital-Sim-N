@@ -4,8 +4,32 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cjson/cJSON.h>
+#include <string.h>
+#include "../types.h"
 
 void displayError(const char* title, const char* message);
+
+int findBurnTargetID(const body_properties_t* gb, const char* target_name) {
+    for (int i = 0; i < gb->count; i++) {
+        if (strcmp(gb->names[i], target_name) == 0) {
+            return i;
+        }
+    }
+    displayError("ERROR", "Relative burn target body not found");
+    return -1;
+}
+
+relative_burn_target_t findRelativeBurnType(const char* input_burn_type) {
+    if (strcmp(input_burn_type, "tangent") == 0)
+        return (relative_burn_target_t){.tangent = true};
+    if (strcmp(input_burn_type, "normal") == 0)
+        return (relative_burn_target_t){.normal = true};
+    if (strcmp(input_burn_type, "absolute") == 0)
+        return (relative_burn_target_t){.absolute = true};
+
+    displayError("ERROR", "Invalid relative burn type");
+    return (relative_burn_target_t){0};
+}
 
 // json handling logic for reading json files
 void readSimulationJSON(const char* FILENAME, body_properties_t* gb, spacecraft_properties_t* sc) {
@@ -100,11 +124,27 @@ void readSimulationJSON(const char* FILENAME, body_properties_t* gb, spacecraft_
                     cJSON* burn = NULL;
                     int burn_idx = 0;
                     cJSON_ArrayForEach(burn, burns_array) {
+                        cJSON* burn_target = cJSON_GetObjectItemCaseSensitive(burn, "burn_target");
+                        cJSON* burn_type = cJSON_GetObjectItemCaseSensitive(burn, "burn_type");
                         cJSON* start_time = cJSON_GetObjectItemCaseSensitive(burn, "start_time");
                         cJSON* duration = cJSON_GetObjectItemCaseSensitive(burn, "duration");
                         cJSON* heading = cJSON_GetObjectItemCaseSensitive(burn, "heading");
                         cJSON* throttle = cJSON_GetObjectItemCaseSensitive(burn, "throttle");
 
+                        const char* burn_target_name = burn_target->valuestring;
+                        const int burn_target_id = findBurnTargetID(gb, burn_target_name);
+                        if (burn_target_id == -1) {
+                            char err_txt[64];
+                            snprintf(err_txt, sizeof(err_txt), "Burn target %s not found or is invalid", burn_target_name);
+                            displayError("ERROR", err_txt);
+                            break;
+                        }
+
+                        const char* burn_type_name = burn_type->valuestring;
+                        const relative_burn_target_t relative_burn_target_type = findRelativeBurnType(burn_type_name);
+
+                        burns[burn_idx].burn_target_id = burn_target_id;
+                        burns[burn_idx].relative_burn_target = relative_burn_target_type;
                         burns[burn_idx].burn_start_time = start_time->valuedouble;
                         burns[burn_idx].burn_end_time = start_time->valuedouble + duration->valuedouble;
                         burns[burn_idx].burn_heading = heading->valuedouble;

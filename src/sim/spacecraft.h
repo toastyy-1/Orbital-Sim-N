@@ -7,7 +7,7 @@ void craft_calculateGravForce(const spacecraft_properties_t* sc, int i, const bo
 void craft_transformCoordinates(const spacecraft_properties_t* sc, int i, window_params_t wp);
 void craft_updateMotion(const spacecraft_properties_t* sc, int i, double dt);
 void craft_applyThrust(const spacecraft_properties_t* sc, int i);
-void craft_checkBurnSchedule(const spacecraft_properties_t* sc, int i, double sim_time);
+void craft_checkBurnSchedule(const spacecraft_properties_t* sc, int i, const body_properties_t* gb, double sim_time);
 void craft_consumeFuel(const spacecraft_properties_t* sc, int i, double dt);
 void craft_addSpacecraft(spacecraft_properties_t* sc, const char* name,
                         double x_pos, double y_pos, double x_vel, double y_vel,

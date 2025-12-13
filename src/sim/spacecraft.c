@@ -7,17 +7,38 @@
 void displayError(const char* title, const char* message);
 
 // check and activate burns
-void craft_checkBurnSchedule(const spacecraft_properties_t* sc, const int i, const double sim_time) {
+void craft_checkBurnSchedule(const spacecraft_properties_t* sc, const int i, const body_properties_t* gb, const double sim_time) {
     // loop through all burns and check if any should be active
     bool burn_active = false;
     for (int j = 0; j < sc->num_burns[i]; j++) {
         // check if within the burn window
-        if (sim_time >= sc->burn_properties[i][j].burn_start_time &&
-            sim_time < sc->burn_properties[i][j].burn_end_time &&
-            sc->fuel_mass[i] > 0) {
+        if (sim_time >= sc->burn_properties[i][j].burn_start_time && sim_time < sc->burn_properties[i][j].burn_end_time && sc->fuel_mass[i] > 0) {
             sc->engine_on[i] = true;
             sc->throttle[i] = sc->burn_properties[i][j].throttle;
-            sc->attitude[i] = sc->burn_properties[i][j].burn_heading;
+
+            // calculate attitude based on burn type
+            double final_attitude = 0.0;
+            const burn_properties_t* burn = &sc->burn_properties[i][j];
+            const int target_id = burn->burn_target_id;
+
+            if (burn->relative_burn_target.absolute) {
+                // absolute: heading is in absolute space coordinates
+                final_attitude = burn->burn_heading;
+            } else if (burn->relative_burn_target.tangent) {
+                // tangent: heading is relative to the velocity vector (tangent to orbit)
+                const double rel_vel_x = sc->vel_x[i] - gb->vel_x[target_id];
+                const double rel_vel_y = sc->vel_y[i] - gb->vel_y[target_id];
+                const double velocity_angle = atan2(rel_vel_y, rel_vel_x);
+                final_attitude = velocity_angle + burn->burn_heading;
+            } else if (burn->relative_burn_target.normal) {
+                // normal: heading is relative to the normal vector (perpendicular to orbit)
+                const double rel_vel_x = sc->vel_x[i] - gb->vel_x[target_id];
+                const double rel_vel_y = sc->vel_y[i] - gb->vel_y[target_id];
+                const double velocity_angle = atan2(rel_vel_y, rel_vel_x);
+                final_attitude = velocity_angle + M_PI / 2.0 + burn->burn_heading;
+            }
+
+            sc->attitude[i] = final_attitude;
             burn_active = true;
             break; // only execute one burn at a time
         }

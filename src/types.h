@@ -60,10 +60,18 @@ typedef struct {
 } body_properties_t;
 
 typedef struct {
+    bool tangent;   // the burn axis heading beings tangent to the orbit
+    bool normal;    // the burn axis heading begins normal to the orbit
+    bool absolute;  // the burn axis heading is relative to the vertical axis of space
+} relative_burn_target_t;
+
+typedef struct {
     double burn_start_time;
     double burn_end_time;
     double throttle;
     double burn_heading;
+    int burn_target_id;
+    relative_burn_target_t relative_burn_target; // the axis of rotation the burn heading will be measured from
 } burn_properties_t;
 
 typedef struct {

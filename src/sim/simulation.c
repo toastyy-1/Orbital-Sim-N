@@ -229,7 +229,7 @@ void runCalculations(const body_properties_t* gb, const spacecraft_properties_t*
                 sc->grav_force_y[i] = 0;
 
                 // check if burn should be active based on simulation time
-                craft_checkBurnSchedule(sc, i, wp->sim_time);
+                craft_checkBurnSchedule(sc, i, gb, wp->sim_time);
 
                 // loop through all bodies and calculate gravitational forces on spacecraft
                 for (int j = 0; j < gb->count; j++) {

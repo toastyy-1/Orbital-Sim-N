@@ -57,12 +57,13 @@ void craft_DrawCraft(SDL_Renderer* renderer, const window_params_t* wp, const sp
 
         // rotate and translate vertices based on heading (radians -- ccw positive)
         SDL_FPoint points[4];
+        const float render_attitude =  -(float)sc->attitude[craft_id] + (float)M_PI / 2.0f;
         for (int i = 0; i < 3; i++) {
             const float x = vertices[i][0];
             const float y = vertices[i][1];
 
-            const float rotated_x = x * cosf((float)sc->attitude[craft_id]) - y * sinf((float)sc->attitude[craft_id]);
-            const float rotated_y = x * sinf((float)sc->attitude[craft_id]) + y * cosf((float)sc->attitude[craft_id]);
+            const float rotated_x = x * cosf(render_attitude) - y * sinf(render_attitude);
+            const float rotated_y = x * sinf(render_attitude) + y * cosf(render_attitude);
 
             points[i].x = center_x + rotated_x;
             points[i].y = center_y + rotated_y;
