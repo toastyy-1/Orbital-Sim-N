@@ -19,7 +19,6 @@ if(CMAKE_C_COMPILER_ID MATCHES "Clang|GNU")
             -march=native
             -mtune=native
             -flto=auto
-            -ffast-math
             -funroll-loops
             -mavx2 -mfma
             -fno-math-errno -fno-trapping-math
