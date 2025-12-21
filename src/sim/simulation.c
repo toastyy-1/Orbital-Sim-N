@@ -3,6 +3,7 @@
 #include "../sim/bodies.h"
 #include "../sim/spacecraft.h"
 #include <math.h>
+#include <stdlib.h>
 
 // calculate total system energy for all bodies
 // this avoids double-counting by only calculating each pair interaction once

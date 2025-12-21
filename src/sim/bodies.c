@@ -3,6 +3,7 @@
 #include <math.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 void displayError(const char* title, const char* message);
 
@@ -155,7 +156,11 @@ void body_addOrbitalBody(body_properties_t* gb, const char* name, const double m
         displayError("ERROR", "Error: Failed to allocate memory for body name\n");
         return;
     }
+#ifdef WIN32
     strcpy_s(gb->names[idx], strlen(name) + 1, name);
+#else
+    strcpy(gb->names[idx], name);
+#endif
 
     // initialize the new body
     gb->mass[idx] = mass;

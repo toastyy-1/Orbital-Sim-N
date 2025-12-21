@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-# Project definition (should come before compiler settings)
+# Project definition
 project(OrbitSimulation C)
 
 # C Standard
@@ -15,14 +15,14 @@ if(CMAKE_C_COMPILER_ID MATCHES "Clang|GNU")
     if(CMAKE_BUILD_TYPE STREQUAL "Release")
         # Aggressive optimization flags for maximum performance
         add_compile_options(
-            -O3
-            -march=native
-            -mtune=native
-            -flto=auto
-            -funroll-loops
-            -mavx2 -mfma
-            -fno-math-errno -fno-trapping-math
-            -DNDEBUG
+                -O3
+                -march=native
+                -mtune=native
+                -flto=auto
+                -funroll-loops
+                -mavx2 -mfma
+                -fno-math-errno -fno-trapping-math
+                -DNDEBUG
         )
         add_link_options(-flto=auto)    # Enable LTO during linking
 
@@ -39,16 +39,17 @@ elseif(MSVC)
     if(CMAKE_BUILD_TYPE STREQUAL "Release")
         # MSVC optimization flags
         add_compile_options(
-            /O2                    # Maximum optimization
-            /GL                    # Whole program optimization
-            /arch:AVX2             # Use AVX2 instructions if available
-            /fp:fast               # Fast floating-point model
+                /O2                    # Maximum optimization
+                /GL                    # Whole program optimization
+                /arch:AVX2             # Use AVX2 instructions if available
+                /fp:fast               # Fast floating-point model
         )
         add_link_options(/LTCG)    # Link-time code generation
     endif()
 endif()
 
 # Find required packages
+# Note: On Linux, ensure these are installed via package manager or built from source
 find_package(SDL3 CONFIG REQUIRED)
 find_package(SDL3_ttf CONFIG REQUIRED)
 find_package(cJSON CONFIG REQUIRED)
@@ -60,7 +61,7 @@ else()
     find_package(Threads REQUIRED)
 endif()
 
-# Source files (no need for separate HEADERS variable)
+# Source files
 set(SOURCES
         src/main.c
         src/types.h
@@ -88,10 +89,11 @@ if(WIN32)
     set_target_properties(${PROJECT_NAME} PROPERTIES WIN32_EXECUTABLE TRUE)
 endif()
 
-# Link libraries (unified approach)
+# Link libraries
+# Change: Use namespaced targets (e.g., cJSON::cJSON) for Linux case-sensitivity
 target_link_libraries(${PROJECT_NAME} PRIVATE
-        SDL3::SDL3
-        SDL3_ttf::SDL3_ttf
+        SDL3
+        SDL3_ttf
         cjson
 )
 
@@ -99,6 +101,8 @@ if(WIN32)
     target_link_libraries(${PROJECT_NAME} PRIVATE PThreads4W::PThreads4W)
 else()
     target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads)
+    # CRITICAL FIX for Linux: Explicitly link the math library
+    target_link_libraries(${PROJECT_NAME} PRIVATE m)
 endif()
 
 # Copy assets to build directory

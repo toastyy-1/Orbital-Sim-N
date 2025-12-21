@@ -3,6 +3,7 @@
 #include <math.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 void displayError(const char* title, const char* message);
 
@@ -219,7 +220,11 @@ void craft_addSpacecraft(spacecraft_properties_t* sc, const char* name,
 
     // allocate memory for the name and copy it
     sc->names[idx] = (char*)malloc(strlen(name) + 1);
+#ifdef WIN32
     strcpy_s(sc->names[idx], strlen(name) + 1, name);
+#else
+    strcpy(sc->names[idx], name);
+#endif
 
     // initialize the new craft
     sc->pos_x[idx] = x_pos;
