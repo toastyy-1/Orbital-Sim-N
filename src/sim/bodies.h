@@ -3,7 +3,7 @@
 
 #include "../types.h"
 
-void body_calculateGravForce(const body_properties_t* bodies, int i, int j, window_params_t* wp);
+void body_calculateGravForce(sim_properties_t* sim, int i, int j);
 void body_updateMotion(const body_properties_t* bodies, int i, double dt);
 void body_transformCoordinates(const body_properties_t* bodies, int i, window_params_t window_params);
 void body_calculateKineticEnergy(const body_properties_t* bodies, int i);

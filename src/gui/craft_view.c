@@ -41,7 +41,10 @@ rel_body_vector_t craft_calcVectorToBody(const spacecraft_properties_t* sc, cons
 }
 
 // draws the shape of the craft in the craft view
-void craft_DrawCraft(SDL_Renderer* renderer, const window_params_t* wp, const spacecraft_properties_t* sc, const int craft_id) {
+void craft_DrawCraft(SDL_Renderer* renderer, const sim_properties_t* sim, const int craft_id) {
+    const window_params_t* wp = &sim->wp;
+    const spacecraft_properties_t* sc = &sim->gs;
+
     if (sc != NULL && sc->count > 0 && sc->attitude != NULL) {
         const float center_x = wp->window_size_x / 2.0f;
         const float center_y = wp->window_size_y / 2.0f;
@@ -88,7 +91,11 @@ void craft_DrawCraft(SDL_Renderer* renderer, const window_params_t* wp, const sp
 const float vertical_desc_text_buffer = 15;
 
 // draws the arrows that point to planets and their distances relative to the craft
-void craft_DrawRelativeArrows(SDL_Renderer* renderer, const window_params_t* wp, const body_properties_t* gb, const spacecraft_properties_t* sc, const int craft_id) {
+void craft_DrawRelativeArrows(SDL_Renderer* renderer, const sim_properties_t* sim, const int craft_id) {
+    const window_params_t* wp = &sim->wp;
+    const body_properties_t* gb = &sim->gb;
+    const spacecraft_properties_t* sc = &sim->gs;
+
     if (sc != NULL && sc->count > 0 && gb != NULL && gb->count > 0) {
         const float center_x = wp->window_size_x / 2.0f;
         const float center_y = wp->window_size_y / 2.0f;
@@ -116,7 +123,11 @@ void craft_DrawRelativeArrows(SDL_Renderer* renderer, const window_params_t* wp,
 }
 
 // draws the craft's velocity, thrust, etc. arrows
-void craft_drawCraftPropertyArrows(SDL_Renderer* renderer, const window_params_t* wp, const body_properties_t* gb, const spacecraft_properties_t* sc, const int craft_id) {
+void craft_drawCraftPropertyArrows(SDL_Renderer* renderer, const sim_properties_t* sim, const int craft_id) {
+    const window_params_t* wp = &sim->wp;
+    const body_properties_t* gb = &sim->gb;
+    const spacecraft_properties_t* sc = &sim->gs;
+
     if (sc != NULL && sc->count > 0 && gb != NULL && gb->count > 0) {
         const float center_x = wp->window_size_x / 2.0f;
         const float center_y = wp->window_size_y / 2.0f;
@@ -155,7 +166,11 @@ void craft_drawCraftPropertyArrows(SDL_Renderer* renderer, const window_params_t
 }
 
 // craft information
-void craft_drawCraftInfo(SDL_Renderer* renderer, const window_params_t* wp, const body_properties_t* gb, const spacecraft_properties_t* sc, const int craft_id) {
+void craft_drawCraftInfo(SDL_Renderer* renderer, const sim_properties_t* sim, const int craft_id) {
+    const window_params_t* wp = &sim->wp;
+    const body_properties_t* gb = &sim->gb;
+    const spacecraft_properties_t* sc = &sim->gs;
+
     if (sc == NULL || sc->count == 0) return;
 
     const float padding = wp->window_size_y * 0.03f;
@@ -273,9 +288,9 @@ void craft_drawCraftInfo(SDL_Renderer* renderer, const window_params_t* wp, cons
 }
 
 // toggleable craft view window
-void craft_RenderCraftView(SDL_Renderer* renderer, window_params_t* wp, body_properties_t* gb, spacecraft_properties_t* sc) {
-    craft_DrawCraft(renderer, wp, sc, 0);
-    craft_DrawRelativeArrows(renderer, wp, gb, sc, 0);
-    craft_drawCraftPropertyArrows(renderer, wp, gb, sc, 0);
-    craft_drawCraftInfo(renderer, wp, gb, sc, 0);
+void craft_RenderCraftView(SDL_Renderer* renderer, sim_properties_t* sim) {
+    craft_DrawCraft(renderer, sim, 0);
+    craft_DrawRelativeArrows(renderer, sim, 0);
+    craft_drawCraftPropertyArrows(renderer, sim, 0);
+    craft_drawCraftInfo(renderer, sim, 0);
 }

@@ -158,7 +158,10 @@ bool isMouseInRect(const int mouse_x, const int mouse_y, const int rect_x, const
             mouse_y >= rect_y && mouse_y <= rect_y + rect_h);
 }
 
-void body_renderOrbitBodies(SDL_Renderer* renderer, body_properties_t* gb, window_params_t* wp) {
+void body_renderOrbitBodies(SDL_Renderer* renderer, sim_properties_t* sim) {
+    body_properties_t* gb = &sim->gb;
+    window_params_t* wp = &sim->wp;
+
     for (int i = 0; i < gb->count; i++) {
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
         // draw bodies
@@ -469,10 +472,13 @@ void showFPS(SDL_Renderer* renderer, const Uint64 frame_start_time, const Uint64
 }
 
 // the stats box that shows stats yay
-void renderStatsBox(SDL_Renderer* renderer, body_properties_t* bodies, const spacecraft_properties_t* sc, const window_params_t wp, stats_window_t* stats_window) {
-    const float margin_x    = (wp.window_size_x * 0.02f);
-    const float top_y       = (wp.window_size_y * 0.1f);
-    const float line_height = (wp.window_size_y * 0.025f);
+void renderStatsBox(SDL_Renderer* renderer, const sim_properties_t* sim, stats_window_t* stats_window) {
+    const body_properties_t* bodies = &sim->gb;
+    const window_params_t* wp = &sim->wp;
+
+    const float margin_x    = (wp->window_size_x * 0.02f);
+    const float top_y       = (wp->window_size_y * 0.1f);
+    const float line_height = (wp->window_size_y * 0.025f);
 
     if (!bodies || bodies->count == 0) return;
 
@@ -486,7 +492,7 @@ void renderStatsBox(SDL_Renderer* renderer, body_properties_t* bodies, const spa
         }
 
         // calculate and cache total system energy
-        double total_energy = calculateTotalSystemEnergy(bodies, sc);
+        double total_energy = calculateTotalSystemEnergy(sim);
         snprintf(stats_window->total_energy_text, sizeof(stats_window->total_energy_text),
                  "Total Energy: %.2e J", total_energy);
 
@@ -544,7 +550,9 @@ void renderStatsBox(SDL_Renderer* renderer, body_properties_t* bodies, const spa
 // EVENT HANDLING HELPER FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // handles mouse motion events (dragging and button hover states)
-static void handleMouseMotionEvent(const SDL_Event* event, window_params_t* wp, button_storage_t* buttons) {
+static void handleMouseMotionEvent(const SDL_Event* event, sim_properties_t* sim, button_storage_t* buttons) {
+    window_params_t* wp = &sim->wp;
+
     int mouse_x = (int)event->motion.x;
     int mouse_y = (int)event->motion.y;
 
@@ -575,7 +583,11 @@ static void handleMouseMotionEvent(const SDL_Event* event, window_params_t* wp, 
 }
 
 // handles mouse button down events (button clicks and drag start)
-static void handleMouseButtonDownEvent(const SDL_Event* event, window_params_t* wp, body_properties_t* gb, spacecraft_properties_t* sc, const button_storage_t* buttons, stats_window_t* stats_window) {
+static void handleMouseButtonDownEvent(const SDL_Event* event, sim_properties_t* sim, const button_storage_t* buttons, stats_window_t* stats_window) {
+    window_params_t* wp = &sim->wp;
+    body_properties_t* gb = &sim->gb;
+    spacecraft_properties_t* sc = &sim->gs;
+
     // check if right mouse button or middle mouse button (for dragging)
     if (event->button.button == SDL_BUTTON_RIGHT || event->button.button == SDL_BUTTON_MIDDLE) {
         wp->is_dragging = true;
@@ -608,14 +620,18 @@ static void handleMouseButtonDownEvent(const SDL_Event* event, window_params_t* 
 }
 
 // handles mouse button release events
-static void handleMouseButtonUpEvent(const SDL_Event* event, window_params_t* wp) {
+static void handleMouseButtonUpEvent(const SDL_Event* event, sim_properties_t* sim) {
+    window_params_t* wp = &sim->wp;
+
     if (event->button.button == SDL_BUTTON_RIGHT || event->button.button == SDL_BUTTON_MIDDLE) {
         wp->is_dragging = false;
     }
 }
 
 // handles mouse wheel events (zooming and speed control)
-static void handleMouseWheelEvent(const SDL_Event* event, window_params_t* wp, const button_storage_t* buttons) {
+static void handleMouseWheelEvent(const SDL_Event* event, sim_properties_t* sim, const button_storage_t* buttons) {
+    window_params_t* wp = &sim->wp;
+
     int mouse_x = (int)event->wheel.mouse_x;
     int mouse_y = (int)event->wheel.mouse_y;
 
@@ -642,7 +658,9 @@ static void handleMouseWheelEvent(const SDL_Event* event, window_params_t* wp, c
 }
 
 // handles keyboard events (pause/play, reset)
-static void handleKeyboardEvent(const SDL_Event* event, window_params_t* wp) {
+static void handleKeyboardEvent(const SDL_Event* event, sim_properties_t* sim) {
+    window_params_t* wp = &sim->wp;
+
     if(event->key.key == SDLK_SPACE) {
         if (wp->sim_running == false) {
             wp->sim_running = true;
@@ -657,7 +675,9 @@ static void handleKeyboardEvent(const SDL_Event* event, window_params_t* wp) {
 }
 
 // handles window resize events
-static void handleWindowResizeEvent(const SDL_Event* event, window_params_t* wp, button_storage_t* buttons) {
+static void handleWindowResizeEvent(const SDL_Event* event, sim_properties_t* sim, button_storage_t* buttons) {
+    window_params_t* wp = &sim->wp;
+
     // store old font size to check if it changed
     static float last_font_size = 0.0f;
     static float last_small_font_size = 0.0f;
@@ -714,7 +734,9 @@ static void handleWindowResizeEvent(const SDL_Event* event, window_params_t* wp,
 // MAIN EVENT CHECKING FUNCTION
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // the event handling code... checks if events are happening for input and does a task based on that input
-void runEventCheck(SDL_Event* event, window_params_t* wp, body_properties_t* gb, spacecraft_properties_t* sc, button_storage_t* buttons, stats_window_t* stats_window) {
+void runEventCheck(SDL_Event* event, sim_properties_t* sim, button_storage_t* buttons, stats_window_t* stats_window) {
+    window_params_t* wp = &sim->wp;
+
     while (SDL_PollEvent(event)) {
         // check if x button is pressed to quit
         if (event->type == SDL_EVENT_QUIT) {
@@ -724,28 +746,28 @@ void runEventCheck(SDL_Event* event, window_params_t* wp, body_properties_t* gb,
         }
         // check if mouse is moving to update hover state
         else if (event->type == SDL_EVENT_MOUSE_MOTION && event->window.windowID == wp->main_window_ID) {
-            handleMouseMotionEvent(event, wp, buttons);
+            handleMouseMotionEvent(event, sim, buttons);
         }
         // check if mouse button is clicked
         else if (event->type == SDL_EVENT_MOUSE_BUTTON_DOWN && event->window.windowID == wp->main_window_ID) {
-            handleMouseButtonDownEvent(event, wp, gb, sc, buttons, stats_window);
+            handleMouseButtonDownEvent(event, sim, buttons, stats_window);
         }
         // check if mouse button is released
         else if (event->type == SDL_EVENT_MOUSE_BUTTON_UP && event->window.windowID == wp->main_window_ID) {
-            handleMouseButtonUpEvent(event, wp);
+            handleMouseButtonUpEvent(event, sim);
         }
         // check if scroll
         else if (event->type == SDL_EVENT_MOUSE_WHEEL && event->window.windowID == wp->main_window_ID) {
-            handleMouseWheelEvent(event, wp, buttons);
+            handleMouseWheelEvent(event, sim, buttons);
         }
         // check if keyboard key is pressed
         else if (event->type == SDL_EVENT_KEY_DOWN && event->window.windowID == wp->main_window_ID) {
-            handleKeyboardEvent(event, wp);
+            handleKeyboardEvent(event, sim);
         }
         // check if window is resized (only for main window)
         else if (event->type == SDL_EVENT_WINDOW_RESIZED &&
                  event->window.windowID == wp->main_window_ID) {
-            handleWindowResizeEvent(event, wp, buttons);
+            handleWindowResizeEvent(event, sim, buttons);
         }
     }
 }

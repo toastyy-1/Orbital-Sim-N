@@ -121,6 +121,13 @@ typedef struct {
     burn_properties_t** burn_properties;
 } spacecraft_properties_t;
 
+// container for all the sim elements
+typedef struct {
+    body_properties_t gb; // global bodies
+    spacecraft_properties_t gs; // global spacecraft
+    window_params_t wp; // window properties
+} sim_properties_t;
+
 typedef struct {
     int frame_counter;
     bool is_shown;
@@ -153,17 +160,6 @@ typedef struct {
     button_t show_stats_button;
 } button_storage_t;
 
-typedef struct {
-    body_properties_t* gb;
-    spacecraft_properties_t* sc;
-    window_params_t* wp;
-} physics_sim_args;
-
-typedef struct {
-    body_properties_t* gb;
-    spacecraft_properties_t* sc;
-    window_params_t* wp;
-} cleanup_args;
 
 typedef struct {
     FILE* body_pos_FILE;

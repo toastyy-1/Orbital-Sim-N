@@ -7,6 +7,6 @@
 
 #include "../types.h"
 
-void exportTelemetryBinary(binary_filenames_t filenames, window_params_t wp, body_properties_t gb, spacecraft_properties_t sc);
+void exportTelemetryBinary(binary_filenames_t filenames, const sim_properties_t* sim);
 
 #endif //ORBITSIMULATION_TELEMETRY_EXPORT_H

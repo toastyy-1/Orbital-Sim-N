@@ -3,9 +3,9 @@
 
 #include "../types.h"
 
-double calculateTotalSystemEnergy(const body_properties_t* gb, const spacecraft_properties_t* sc);
-void resetSim(window_params_t* wp, body_properties_t* gb, spacecraft_properties_t* sc);
-void runCalculations(const body_properties_t* gb, const spacecraft_properties_t* sc, window_params_t* wp);
-void cleanup(void* args);
+double calculateTotalSystemEnergy(const sim_properties_t* sim);
+void resetSim(sim_properties_t* sim);
+void runCalculations(sim_properties_t* sim);
+void cleanup(sim_properties_t* sim);
 
 #endif

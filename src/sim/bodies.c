@@ -10,7 +10,9 @@ void displayError(const char* title, const char* message);
 // at the end of each sim loop, this function should be run to calculate the changes in
 // the force values based on other parameters. for example, using F to find a based on m.
 // i is the body that has the force applied to it, whilst j is the body applying force to i
-void body_calculateGravForce(const body_properties_t* bodies, const int i, const int j, window_params_t* wp) {
+void body_calculateGravForce(sim_properties_t* sim, const int i, const int j) {
+    const body_properties_t* bodies = &sim->gb;
+
     // calculate the distance between the two bodies
     const double delta_pos_x = bodies->pos_x[j] - bodies->pos_x[i];
     const double delta_pos_y = bodies->pos_y[j] - bodies->pos_y[i];
@@ -19,8 +21,8 @@ void body_calculateGravForce(const body_properties_t* bodies, const int i, const
     // planet collision logic -- checks if planets are too close
     const double radius_squared = bodies->radius[i] * bodies->radius[i];
     if (r_squared < radius_squared) {
-        wp->sim_running = false;
-        wp->reset_sim = true;
+        sim->wp.sim_running = false;
+        sim->wp.reset_sim = true;
         char err_txt[128];
         snprintf(err_txt, sizeof(err_txt), "Warning: %s has collided with %s\n\nResetting Simulation...", bodies->names[i], bodies->names[j]);
         displayError("PLANET COLLISION", err_txt);

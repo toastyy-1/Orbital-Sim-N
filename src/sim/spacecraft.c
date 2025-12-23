@@ -54,25 +54,28 @@ void craft_checkBurnSchedule(const spacecraft_properties_t* sc, const int i, con
 
 // calculates the force applied on a spacecraft by a specific body
 // (this should be used before any other force functions)
-void craft_calculateGravForce(const spacecraft_properties_t* sc, const int i, const body_properties_t* bodies, const int j, window_params_t* wp) {
+void craft_calculateGravForce(sim_properties_t* sim, const int craft_idx, const int body_idx) {
+    const spacecraft_properties_t* sc = &sim->gs;
+    const body_properties_t* bodies = &sim->gb;
+
     // calculate the distance between the spacecraft and the body
-    const double delta_pos_x = bodies->pos_x[j] - sc->pos_x[i];
-    const double delta_pos_y = bodies->pos_y[j] - sc->pos_y[i];
+    const double delta_pos_x = bodies->pos_x[body_idx] - sc->pos_x[craft_idx];
+    const double delta_pos_y = bodies->pos_y[body_idx] - sc->pos_y[craft_idx];
     const double r_squared = delta_pos_x * delta_pos_x + delta_pos_y * delta_pos_y;
 
     // planet collision logic -- checks if craft is too close to the planet
-    const double radius_squared = bodies->radius[j] * bodies->radius[j];
+    const double radius_squared = bodies->radius[body_idx] * bodies->radius[body_idx];
     if (r_squared < radius_squared) {
-        wp->sim_running = false;
-        wp->reset_sim = true;
+        sim->wp.sim_running = false;
+        sim->wp.reset_sim = true;
         char err_txt[128];
-        snprintf(err_txt, sizeof(err_txt), "Warning: %s has collided with %s\n\nResetting Simulation...", sc->names[i], bodies->names[j]);
+        snprintf(err_txt, sizeof(err_txt), "Warning: %s has collided with %s\n\nResetting Simulation...", sc->names[craft_idx], bodies->names[body_idx]);
         displayError("PLANET COLLISION", err_txt);
         return;
     }
 
     // calculate the ship mass with the current amount of fuel in it
-    sc->current_total_mass[i] = sc->fuel_mass[i] + sc->dry_mass[i];
+    sc->current_total_mass[craft_idx] = sc->fuel_mass[craft_idx] + sc->dry_mass[craft_idx];
 
     // prevent division by zero
     const double min_distance_squared = 1.0;
@@ -83,11 +86,11 @@ void craft_calculateGravForce(const spacecraft_properties_t* sc, const int i, co
     // force = (G * m1 * m2) * delta / r^3
     const double r = sqrt(r_squared);
     const double r_cubed = r_squared * r;
-    const double force_factor = (G * sc->current_total_mass[i] * bodies->mass[j]) / r_cubed;
+    const double force_factor = (G * sc->current_total_mass[craft_idx] * bodies->mass[body_idx]) / r_cubed;
 
     // apply the force to the craft
-    sc->grav_force_x[i] += force_factor * delta_pos_x;
-    sc->grav_force_y[i] += force_factor * delta_pos_y;
+    sc->grav_force_x[craft_idx] += force_factor * delta_pos_x;
+    sc->grav_force_y[craft_idx] += force_factor * delta_pos_y;
 }
 
 // updates the force

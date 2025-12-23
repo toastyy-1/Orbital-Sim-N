@@ -7,7 +7,10 @@
 
 // calculate total system energy for all bodies
 // this avoids double-counting by only calculating each pair interaction once
-double calculateTotalSystemEnergy(const body_properties_t* gb, const spacecraft_properties_t* sc) {
+double calculateTotalSystemEnergy(const sim_properties_t* sim) {
+    const body_properties_t* gb = &sim->gb;
+    const spacecraft_properties_t* sc = &sim->gs;
+
     double total_kinetic = 0.0;
     double total_potential = 0.0;
 
@@ -49,7 +52,11 @@ double calculateTotalSystemEnergy(const body_properties_t* gb, const spacecraft_
 }
 
 // reset the simulation by removing all bodies from the system
-void resetSim(window_params_t* wp, body_properties_t* gb, spacecraft_properties_t* sc) {
+void resetSim(sim_properties_t* sim) {
+    body_properties_t* gb = &sim->gb;
+    spacecraft_properties_t* sc = &sim->gs;
+    window_params_t* wp = &sim->wp;
+
     // reset simulation time to 0
     wp->sim_time = 0;
     // change sim reset flag back to false
@@ -188,7 +195,11 @@ void resetSim(window_params_t* wp, body_properties_t* gb, spacecraft_properties_
     }
 }
 
-void runCalculations(const body_properties_t* gb, const spacecraft_properties_t* sc, window_params_t* wp) {
+void runCalculations(sim_properties_t* sim) {
+    body_properties_t* gb = &sim->gb;
+    spacecraft_properties_t* sc = &sim->gs;
+    window_params_t* wp = &sim->wp;
+
     if (wp->sim_running) {
         ////////////////////////////////////////////////////////////////
         // calculate forces between all body pairs
@@ -203,7 +214,7 @@ void runCalculations(const body_properties_t* gb, const spacecraft_properties_t*
             // loop through every body and add the resultant force to the subject body force vector
             for (int i = 0; i < gb->count; i++) {
                 for (int j = i + 1; j < gb->count; j++) {
-                    body_calculateGravForce(gb, i, j, wp);
+                    body_calculateGravForce(sim, i, j);
                 }
             }
 
@@ -234,7 +245,7 @@ void runCalculations(const body_properties_t* gb, const spacecraft_properties_t*
 
                 // loop through all bodies and calculate gravitational forces on spacecraft
                 for (int j = 0; j < gb->count; j++) {
-                    craft_calculateGravForce(sc, i, gb, j, wp);
+                    craft_calculateGravForce(sim, i, j);
                 }
 
                 // apply thrust first, then consume fuel
@@ -259,82 +270,83 @@ void runCalculations(const body_properties_t* gb, const spacecraft_properties_t*
 }
 
 // cleanup for main
-void cleanup(void* args) {
-    const cleanup_args* c = (cleanup_args*)args;
+void cleanup(sim_properties_t* sim) {
+    body_properties_t* gb = &sim->gb;
+    spacecraft_properties_t* sc = &sim->gs;
 
     // free all bodies
-    for (int i = 0; i < c->gb->count; i++) {
-        free(c->gb->names[i]);
+    for (int i = 0; i < gb->count; i++) {
+        free(gb->names[i]);
     }
 
     // free cache arrays for each body
-    if (c->gb->cached_body_coords_x != NULL) {
-        for (int i = 0; i < c->gb->count; i++) {
-            free(c->gb->cached_body_coords_x[i]);
+    if (gb->cached_body_coords_x != NULL) {
+        for (int i = 0; i < gb->count; i++) {
+            free(gb->cached_body_coords_x[i]);
         }
-        free(c->gb->cached_body_coords_x);
+        free(gb->cached_body_coords_x);
     }
-    if (c->gb->cached_body_coords_y != NULL) {
-        for (int i = 0; i < c->gb->count; i++) {
-            free(c->gb->cached_body_coords_y[i]);
+    if (gb->cached_body_coords_y != NULL) {
+        for (int i = 0; i < gb->count; i++) {
+            free(gb->cached_body_coords_y[i]);
         }
-        free(c->gb->cached_body_coords_y);
+        free(gb->cached_body_coords_y);
     }
 
-    free(c->gb->names);
-    free(c->gb->mass);
-    free(c->gb->radius);
-    free(c->gb->pixel_radius);
-    free(c->gb->pos_x);
-    free(c->gb->pos_y);
-    free(c->gb->pixel_coordinates_x);
-    free(c->gb->pixel_coordinates_y);
-    free(c->gb->vel_x);
-    free(c->gb->vel_y);
-    free(c->gb->vel);
-    free(c->gb->acc_x);
-    free(c->gb->acc_y);
-    free(c->gb->acc_x_prev);
-    free(c->gb->acc_y_prev);
-    free(c->gb->force_x);
-    free(c->gb->force_y);
-    free(c->gb->kinetic_energy);
+    free(gb->names);
+    free(gb->mass);
+    free(gb->radius);
+    free(gb->pixel_radius);
+    free(gb->pos_x);
+    free(gb->pos_y);
+    free(gb->pixel_coordinates_x);
+    free(gb->pixel_coordinates_y);
+    free(gb->vel_x);
+    free(gb->vel_y);
+    free(gb->vel);
+    free(gb->acc_x);
+    free(gb->acc_y);
+    free(gb->acc_x_prev);
+    free(gb->acc_y_prev);
+    free(gb->force_x);
+    free(gb->force_y);
+    free(gb->kinetic_energy);
 
     // free all spacecraft
-    for (int i = 0; i < c->sc->count; i++) {
-        free(c->sc->names[i]);
-        free(c->sc->burn_properties[i]);
+    for (int i = 0; i < sc->count; i++) {
+        free(sc->names[i]);
+        free(sc->burn_properties[i]);
     }
-    free(c->sc->names);
-    free(c->sc->current_total_mass);
-    free(c->sc->dry_mass);
-    free(c->sc->fuel_mass);
-    free(c->sc->pos_x);
-    free(c->sc->pos_y);
-    free(c->sc->pixel_coordinates_x);
-    free(c->sc->pixel_coordinates_y);
-    free(c->sc->attitude);
-    free(c->sc->vel_x);
-    free(c->sc->vel_y);
-    free(c->sc->vel);
-    free(c->sc->rotational_v);
-    free(c->sc->momentum);
-    free(c->sc->acc_x);
-    free(c->sc->acc_y);
-    free(c->sc->acc_x_prev);
-    free(c->sc->acc_y_prev);
-    free(c->sc->rotational_a);
-    free(c->sc->moment_of_inertia);
-    free(c->sc->grav_force_x);
-    free(c->sc->grav_force_y);
-    free(c->sc->torque);
-    free(c->sc->thrust);
-    free(c->sc->mass_flow_rate);
-    free(c->sc->specific_impulse);
-    free(c->sc->throttle);
-    free(c->sc->nozzle_gimbal_range);
-    free(c->sc->nozzle_velocity);
-    free(c->sc->engine_on);
-    free(c->sc->num_burns);
-    free(c->sc->burn_properties);
+    free(sc->names);
+    free(sc->current_total_mass);
+    free(sc->dry_mass);
+    free(sc->fuel_mass);
+    free(sc->pos_x);
+    free(sc->pos_y);
+    free(sc->pixel_coordinates_x);
+    free(sc->pixel_coordinates_y);
+    free(sc->attitude);
+    free(sc->vel_x);
+    free(sc->vel_y);
+    free(sc->vel);
+    free(sc->rotational_v);
+    free(sc->momentum);
+    free(sc->acc_x);
+    free(sc->acc_y);
+    free(sc->acc_x_prev);
+    free(sc->acc_y_prev);
+    free(sc->rotational_a);
+    free(sc->moment_of_inertia);
+    free(sc->grav_force_x);
+    free(sc->grav_force_y);
+    free(sc->torque);
+    free(sc->thrust);
+    free(sc->mass_flow_rate);
+    free(sc->specific_impulse);
+    free(sc->throttle);
+    free(sc->nozzle_gimbal_range);
+    free(sc->nozzle_velocity);
+    free(sc->engine_on);
+    free(sc->num_burns);
+    free(sc->burn_properties);
 }

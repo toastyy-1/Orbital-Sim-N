@@ -3,7 +3,7 @@
 
 #include "../types.h"
 
-void craft_calculateGravForce(const spacecraft_properties_t* sc, int i, const body_properties_t* bodies, int j, window_params_t* wp);
+void craft_calculateGravForce(sim_properties_t* sim, int craft_idx, int body_idx);
 void craft_transformCoordinates(const spacecraft_properties_t* sc, int i, window_params_t wp);
 void craft_updateMotion(const spacecraft_properties_t* sc, int i, double dt);
 void craft_applyThrust(const spacecraft_properties_t* sc, int i);
