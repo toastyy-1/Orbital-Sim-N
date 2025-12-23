@@ -17,6 +17,15 @@
       "vel_x": 0,
       "vel_y": 1022,
       "radius": 1737000
+    },
+    {
+      "name": "Planet 3",
+      "mass": 5e22,
+      "pos_x": -194400000,
+      "pos_y": 0,
+      "vel_x": 0,
+      "vel_y": 1500,
+      "radius": 1737000
     }
   ],
   "spacecraft": [

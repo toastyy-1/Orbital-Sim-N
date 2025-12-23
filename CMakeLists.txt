@@ -48,6 +48,18 @@ elseif(MSVC)
     endif()
 endif()
 
+# macOS-specific: Add Homebrew paths for package discovery
+if(APPLE)
+    # Try common Homebrew installation paths
+    if(EXISTS "/opt/homebrew")
+        # Apple Silicon Macs
+        list(APPEND CMAKE_PREFIX_PATH "/opt/homebrew")
+    elseif(EXISTS "/usr/local")
+        # Intel Macs
+        list(APPEND CMAKE_PREFIX_PATH "/usr/local")
+    endif()
+endif()
+
 # Find required packages
 # Note: On Linux, ensure these are installed via package manager or built from source
 find_package(SDL3 CONFIG REQUIRED)
@@ -92,8 +104,8 @@ endif()
 # Link libraries
 # Change: Use namespaced targets (e.g., cJSON::cJSON) for Linux case-sensitivity
 target_link_libraries(${PROJECT_NAME} PRIVATE
-        SDL3
-        SDL3_ttf
+        SDL3::SDL3
+        SDL3_ttf::SDL3_ttf
         cjson
 )
 
