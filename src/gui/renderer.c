@@ -232,6 +232,11 @@ void renderTimeIndicators(SDL_Renderer* renderer, const window_params_t wp) {
     const char* status_text = wp.sim_running ? "Running" : "Paused";
     SDL_WriteText(renderer, g_font, status_text, right_margin, top_margin, status_color);
 
+    // show data logging indication if applicable
+    if (wp.data_logging_enabled) {
+        const char debug_text[] = "Data Log Enabled";
+        SDL_WriteText(renderer, g_font, debug_text, right_margin, top_margin + wp.font_size * 1.2f * 2, status_color);
+    }
 }
 
 // creates a texture for a button with the given text and background color
@@ -671,6 +676,14 @@ static void handleKeyboardEvent(const SDL_Event* event, sim_properties_t* sim) {
     }
     else if (event->key.key == SDLK_R) {
         wp->reset_sim = true;
+    }
+    else if (event->key.key == SDLK_D) {
+        if (wp->data_logging_enabled) {
+            wp->data_logging_enabled = false;
+        }
+        else if (!wp->data_logging_enabled) {
+            wp->data_logging_enabled = true;
+        }
     }
 }
 

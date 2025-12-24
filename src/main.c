@@ -149,7 +149,6 @@ int main(int argc, char *argv[]) {
             craft_RenderCraftView(renderer, &sim);
         }
 
-        sim.wp.data_logging_enabled = true;
         if (sim.wp.data_logging_enabled) {
             exportTelemetryBinary(filenames, &sim);
         }
