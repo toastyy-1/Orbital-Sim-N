@@ -186,29 +186,17 @@ int main(int argc, char *argv[]) {
         // casts the camera to the required orientation and zoom (always points to the origin)
         castCamera(sim, shaderProgram);
 
-        // make the cube
-        // translation
-        mat4 T = {.m = {
-            1,0,0,0,
-            0,1,0,0,
-            0,0,1,0,
-            0,0,0,1
-        }};
-        mat4 S = {.m = {
-            1,0,0,0,
-            0,1,0,0,
-            0,0,1,0,
-            0,0,0,1
-        }};
+        // create transformation matrices for the cube
+        float angle = (float)sim.wp.sim_time * 0.001f;
+        mat4 translation = mat4_translation(0.0f, 0.0f, 0.0f);
+        mat4 rotation_z = mat4_rotationZ(angle);
+        mat4 rotation_x = mat4_rotationX(angle);
+        mat4 scale = mat4_scale(1.0f, 1.0f, 1.0f);
 
-        mat4 Rz = {.m = {
-            cosf(30), sinf(30), 0, 0,
-           -sinf(30), cosf(30), 0, 0,
-            0,       0,       1, 0,
-            0,       0,       0, 1
-        }};
-        mat4 TxR = mat4_mul(T, Rz);
-        mat4 cubeMatrix = mat4_mul(TxR, S);
+        // combine transformations: T * R * S
+        mat4 TxR = mat4_mul(translation, rotation_z);
+        mat4 RxR = mat4_mul(TxR, rotation_x);
+        mat4 cubeMatrix = mat4_mul(RxR, scale);
 
         setMatrixUniform(shaderProgram, "model", &cubeMatrix);
 

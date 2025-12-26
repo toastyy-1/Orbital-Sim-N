@@ -19,7 +19,7 @@ typedef struct {
     float window_size_x, window_size_y;
 
     // 3D camera
-    float camera_pos[3];    // camera position in world space (defined by a unit vector, whereas the magnitude is changed by the viewport zoom)
+    coord_t camera_pos;    // camera position in world space (defined by a unit vector, whereas the magnitude is changed by the viewport zoom)
     float zoom;             // zoom level
 
     float font_size;
@@ -28,6 +28,8 @@ typedef struct {
     bool sim_running;
     double sim_time;
     SDL_WindowID main_window_ID;
+
+    double meters_per_pixel;
 
     bool is_dragging;
 

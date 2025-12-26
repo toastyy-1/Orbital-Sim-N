@@ -22,8 +22,10 @@ window_params_t init_window_params() {
     wp.window_size_y = (float)mode->h * (2.0f/3.0f);
 
     // initialize 3D camera
-    wp.camera_pos[0] = 2.0f; wp.camera_pos[1] = 2.0f; wp.camera_pos[2] = 3.0f;
+    wp.camera_pos.x = 2.0f; wp.camera_pos.y = 2.0f; wp.camera_pos.z = 3.0f;
     wp.zoom = 1.5f;
+
+    wp.meters_per_pixel = 100000.0;
 
     wp.font_size = (float)wp.window_size_x / 50;
     wp.window_open = true;
@@ -67,8 +69,8 @@ SDL_GL_init_t init_SDL_OPENGL_window(const char* title, int width, int height, U
     // enable VSync
     SDL_GL_SetSwapInterval(1);
 
-    printf("OpenGL version: %p\n", glGetString(GL_VERSION));
-    printf("GLEW version: %p\n", glewGetString(GLEW_VERSION));
+    printf("OpenGL version: %s\n", glGetString(GL_VERSION));
+    printf("GLEW version: %s\n", glewGetString(GLEW_VERSION));
 
     return result;
 }

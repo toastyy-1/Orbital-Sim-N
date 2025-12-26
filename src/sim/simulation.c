@@ -82,8 +82,6 @@ void resetSim(sim_properties_t* sim) {
         free(gb->pixel_radius);
         free(gb->pos_x);
         free(gb->pos_y);
-        free(gb->pos_x);
-        free(gb->pos_y);
         free(gb->vel_x);
         free(gb->vel_y);
         free(gb->vel);

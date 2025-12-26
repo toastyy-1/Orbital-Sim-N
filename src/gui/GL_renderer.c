@@ -169,9 +169,9 @@ void setMatrixUniform(const GLuint shaderProgram, const char* name, const mat4* 
 void castCamera(const sim_properties_t sim, const GLuint shaderProgram) {
     // apply zoom to camera position unit vector
     float zoomedCameraPos[3] = {
-        sim.wp.camera_pos[0] * sim.wp.zoom,
-        sim.wp.camera_pos[1] * sim.wp.zoom,
-        sim.wp.camera_pos[2] * sim.wp.zoom
+        sim.wp.camera_pos.x * sim.wp.zoom,
+        sim.wp.camera_pos.y * sim.wp.zoom,
+        sim.wp.camera_pos.z * sim.wp.zoom
     };
 
     // create view matrix
@@ -186,6 +186,78 @@ void castCamera(const sim_properties_t sim, const GLuint shaderProgram) {
     setMatrixUniform(shaderProgram, "projection", &projMatrix);
 }
 
+
+// creates an identity matrix
+mat4 mat4_identity(void) {
+    mat4 m = {.m = {
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1
+    }};
+    return m;
+}
+
+// creates a translation matrix
+mat4 mat4_translation(float x, float y, float z) {
+    mat4 m = {.m = {
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        x, y, z, 1
+    }};
+    return m;
+}
+
+// creates a scale matrix
+mat4 mat4_scale(float sx, float sy, float sz) {
+    mat4 m = {.m = {
+        sx, 0,  0,  0,
+        0,  sy, 0,  0,
+        0,  0,  sz, 0,
+        0,  0,  0,  1
+    }};
+    return m;
+}
+
+// creates a rotation matrix around the X axis
+mat4 mat4_rotationX(float angle) {
+    float c = cosf(angle);
+    float s = sinf(angle);
+    mat4 m = {.m = {
+        1, 0,  0, 0,
+        0, c, -s, 0,
+        0, s,  c, 0,
+        0, 0,  0, 1
+    }};
+    return m;
+}
+
+// creates a rotation matrix around the Y axis
+mat4 mat4_rotationY(float angle) {
+    float c = cosf(angle);
+    float s = sinf(angle);
+    mat4 m = {.m = {
+         c, 0, s, 0,
+         0, 1, 0, 0,
+        -s, 0, c, 0,
+         0, 0, 0, 1
+    }};
+    return m;
+}
+
+// creates a rotation matrix around the Z axis
+mat4 mat4_rotationZ(float angle) {
+    float c = cosf(angle);
+    float s = sinf(angle);
+    mat4 m = {.m = {
+        c, -s, 0, 0,
+        s,  c, 0, 0,
+        0,  0, 1, 0,
+        0,  0, 0, 1
+    }};
+    return m;
+}
 
 // matrix multiplication
 mat4 mat4_mul(mat4 a, mat4 b) {
