@@ -158,7 +158,7 @@ int main(int argc, char *argv[]) {
 
     // temp: load JSON for now by default
     readSimulationJSON("simulation_data.json", &sim.gb, &sim.gs);
-    sim.wp.time_step = 0.0001;
+    sim.wp.time_step = 0.01;
 
     ////////////////////////////////////////////////////////
     // simulation loop                                    //
@@ -186,23 +186,14 @@ int main(int argc, char *argv[]) {
         // casts the camera to the required orientation and zoom (always points to the origin)
         castCamera(sim, shaderProgram);
 
-        // create transformation matrices for the cube
-        float angle = (float)sim.wp.sim_time * 0.001f;
-        mat4 translation = mat4_translation(0.0f, 0.0f, 0.0f);
-        mat4 rotation_z = mat4_rotationZ(angle);
-        mat4 rotation_x = mat4_rotationX(angle);
-        mat4 scale = mat4_scale(1.0f, 1.0f, 1.0f);
+        float scale = 1e7; // scales in-sim meters to openGL coordinates -- this is an arbitrary number that can be adjusted
 
-        // combine transformations: T * R * S
-        mat4 TxR = mat4_mul(translation, rotation_z);
-        mat4 RxR = mat4_mul(TxR, rotation_x);
-        mat4 cubeMatrix = mat4_mul(RxR, scale);
-
-        setMatrixUniform(shaderProgram, "model", &cubeMatrix);
-
-        // draw the cube
         glBindVertexArray(cube.VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+        for (int i = 0; i < sim.gb.count; i++) {
+            mat4 planet_model = mat4_translation((float)sim.gb.pos_x[i] / scale, (float)sim.gb.pos_y[i] / scale, 0.0f);
+            setMatrixUniform(shaderProgram, "model", &planet_model);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
 
         ////////////////////////////////////////////////////////
         // END OPENGL RENDERER
@@ -239,7 +230,6 @@ int main(int argc, char *argv[]) {
     cleanup(&sim);
 
     // Cleanup OpenGL resources
-    deleteVBO(cube);
     glDeleteProgram(shaderProgram);
 
     fclose(filenames.global_data_FILE);

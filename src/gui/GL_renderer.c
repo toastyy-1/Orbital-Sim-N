@@ -179,7 +179,7 @@ void castCamera(const sim_properties_t sim, const GLuint shaderProgram) {
 
     // create projection matrix
     float aspect = sim.wp.window_size_x / sim.wp.window_size_y;
-    mat4 projMatrix = createProjectionMatrix(3.14159f / 4.0f, aspect, 0.1f, 100.0f);
+    mat4 projMatrix = createProjectionMatrix(3.14159f / 4.0f, aspect, 0.1f, 100000.0f);
 
     // set matrices in shader
     setMatrixUniform(shaderProgram, "view", &viewMatrix);
