@@ -204,6 +204,7 @@ int main(int argc, char *argv[]) {
         // update viewport for window resizing
         glViewport(0, 0, (int)sim.wp.window_size_x, (int)sim.wp.window_size_y);
 
+        // use shader progra
         glUseProgram(shaderProgram);
 
         // casts the camera to the required orientation and zoom (always points to the origin)
