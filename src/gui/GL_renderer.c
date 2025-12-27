@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include "../globals.h"
 
 char* loadShaderSource(const char* filepath) {
     FILE* file = fopen(filepath, "r");
@@ -186,100 +187,86 @@ void castCamera(const sim_properties_t sim, const GLuint shaderProgram) {
     setMatrixUniform(shaderProgram, "projection", &projMatrix);
 }
 
+// sphere mesh generation
+sphere_mesh_t generateUnitSphere(unsigned int stacks, unsigned int sectors) {
+    sphere_mesh_t sphere = {0};
 
-// creates an identity matrix
-mat4 mat4_identity(void) {
-    mat4 m = {.m = {
-        1, 0, 0, 0,
-        0, 1, 0, 0,
-        0, 0, 1, 0,
-        0, 0, 0, 1
-    }};
-    return m;
-}
+    // each quad (stack-sector intersection) creates 2 triangles = 6 vertices
+    // total quads = stacks * sectors
+    sphere.vertex_count = stacks * sectors * 6;
+    sphere.data_size = sphere.vertex_count * 6 * sizeof(float); // 6 floats per vertex (pos + normal)
 
-// creates a translation matrix
-mat4 mat4_translation(float x, float y, float z) {
-    mat4 m = {.m = {
-        1, 0, 0, 0,
-        0, 1, 0, 0,
-        0, 0, 1, 0,
-        x, y, z, 1
-    }};
-    return m;
-}
+    sphere.vertices = (float*)malloc(sphere.data_size);
+    if (!sphere.vertices) {
+        fprintf(stderr, "Failed to allocate memory for sphere vertices\n");
+        return sphere;
+    }
 
-// creates a scale matrix
-mat4 mat4_scale(float sx, float sy, float sz) {
-    mat4 m = {.m = {
-        sx, 0,  0,  0,
-        0,  sy, 0,  0,
-        0,  0,  sz, 0,
-        0,  0,  0,  1
-    }};
-    return m;
-}
+    float* data = sphere.vertices;
+    const float PI = 3.14159265359f;
 
-// creates a rotation matrix around the X axis
-mat4 mat4_rotationX(float angle) {
-    float c = cosf(angle);
-    float s = sinf(angle);
-    mat4 m = {.m = {
-        1, 0,  0, 0,
-        0, c, -s, 0,
-        0, s,  c, 0,
-        0, 0,  0, 1
-    }};
-    return m;
-}
+    // generate vertices for each stack and sector
+    for (unsigned int i = 0; i < stacks; ++i) {
+        float theta1 = (float)i * PI / (float)stacks;
+        float theta2 = (float)(i + 1) * PI / (float)stacks;
 
-// creates a rotation matrix around the Y axis
-mat4 mat4_rotationY(float angle) {
-    float c = cosf(angle);
-    float s = sinf(angle);
-    mat4 m = {.m = {
-         c, 0, s, 0,
-         0, 1, 0, 0,
-        -s, 0, c, 0,
-         0, 0, 0, 1
-    }};
-    return m;
-}
+        for (unsigned int j = 0; j < sectors; ++j) {
+            float phi1 = (float)j * 2.0f * PI / (float)sectors;
+            float phi2 = (float)(j + 1) * 2.0f * PI / (float)sectors;
 
-// creates a rotation matrix around the Z axis
-mat4 mat4_rotationZ(float angle) {
-    float c = cosf(angle);
-    float s = sinf(angle);
-    mat4 m = {.m = {
-        c, -s, 0, 0,
-        s,  c, 0, 0,
-        0,  0, 1, 0,
-        0,  0, 0, 1
-    }};
-    return m;
-}
+            // calculate 4 vertices of the quad
+            // v1 (top-left)
+            float v1_x = cosf(phi1) * sinf(theta1);
+            float v1_y = cosf(theta1);
+            float v1_z = sinf(phi1) * sinf(theta1);
 
-// matrix multiplication
-mat4 mat4_mul(mat4 a, mat4 b) {
-    mat4 r;
+            // v2 (bottom-left)
+            float v2_x = cosf(phi1) * sinf(theta2);
+            float v2_y = cosf(theta2);
+            float v2_z = sinf(phi1) * sinf(theta2);
 
-    for (int col = 0; col < 4; ++col) {
-        for (int row = 0; row < 4; ++row) {
-            r.m[col*4 + row] =
-                a.m[0*4 + row] * b.m[col*4 + 0] +
-                a.m[1*4 + row] * b.m[col*4 + 1] +
-                a.m[2*4 + row] * b.m[col*4 + 2] +
-                a.m[3*4 + row] * b.m[col*4 + 3];
+            // v3 (bottom-right)
+            float v3_x = cosf(phi2) * sinf(theta2);
+            float v3_y = cosf(theta2);
+            float v3_z = sinf(phi2) * sinf(theta2);
+
+            // v4 (top-right)
+            float v4_x = cosf(phi2) * sinf(theta1);
+            float v4_y = cosf(theta1);
+            float v4_z = sinf(phi2) * sinf(theta1);
+
+            // first triangle (v1, v2, v3)
+            // v1
+            *data++ = v1_x; *data++ = v1_y; *data++ = v1_z; // position
+            *data++ = v1_x; *data++ = v1_y; *data++ = v1_z; // normal (same as position for unit sphere)
+            // v2
+            *data++ = v2_x; *data++ = v2_y; *data++ = v2_z;
+            *data++ = v2_x; *data++ = v2_y; *data++ = v2_z;
+            // v3
+            *data++ = v3_x; *data++ = v3_y; *data++ = v3_z;
+            *data++ = v3_x; *data++ = v3_y; *data++ = v3_z;
+
+            // second triangle (v1, v3, v4)
+            // v1
+            *data++ = v1_x; *data++ = v1_y; *data++ = v1_z;
+            *data++ = v1_x; *data++ = v1_y; *data++ = v1_z;
+            // v3
+            *data++ = v3_x; *data++ = v3_y; *data++ = v3_z;
+            *data++ = v3_x; *data++ = v3_y; *data++ = v3_z;
+            // v4
+            *data++ = v4_x; *data++ = v4_y; *data++ = v4_z;
+            *data++ = v4_x; *data++ = v4_y; *data++ = v4_z;
         }
     }
-    return r;
+
+    return sphere;
 }
 
-// transform a point by a matrix (for rotating camera position)
-coord_t mat4_transformPoint(mat4 m, coord_t point) {
-    coord_t result;
-    result.x = m.m[0] * point.x + m.m[4] * point.y + m.m[8]  * point.z + m.m[12];
-    result.y = m.m[1] * point.x + m.m[5] * point.y + m.m[9]  * point.z + m.m[13];
-    result.z = m.m[2] * point.x + m.m[6] * point.y + m.m[10] * point.z + m.m[14];
-    return result;
+void freeSphere(sphere_mesh_t* sphere) {
+    if (sphere && sphere->vertices) {
+        free(sphere->vertices);
+        sphere->vertices = NULL;
+        sphere->vertex_count = 0;
+        sphere->data_size = 0;
+    }
 }

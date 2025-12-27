@@ -3,6 +3,7 @@
 pthread_mutex_t sim_vars_mutex;
 const double G = 6.67430E-11;
 const double M_PI = 3.14159265358979323846;
+const float M_PI_f = 3.14159265358979323846f;
 char* SIMULATION_FILENAME = "simulation_data.json";
 
 float SCALE = 1e7; // scales in-sim meters to openGL coordinates -- this is an arbitrary number that can be adjusted

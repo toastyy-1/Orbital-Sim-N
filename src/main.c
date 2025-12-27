@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <math.h>
-
 #include "globals.h"
 #include "types.h"
 #include "sim/simulation.h"
@@ -16,12 +15,12 @@
 #include <stdlib.h>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
-
 #include <GL/glew.h>
 #include <GL/gl.h>
-
 #include <stdbool.h>
 #include "gui/GL_renderer.h"
+#include "math/matrix.h"
+#include "gui/models.h"
 
 // NOTE: ALL CALCULATIONS SHOULD BE DONE IN BASE SI UNITS
 
@@ -85,84 +84,17 @@ int main(int argc, char *argv[]) {
     glEnable(GL_DEPTH_TEST);
 
     ////////////////////////////////////////
-    // CUBE SETUP                         //
+    // MESH/BUFFER SETUP                  //
     ////////////////////////////////////////
-    // create cube vertices with colors (position xyz + color rgb)
-    float unit_cube_vertices[] = {
-        // positions          // colors
-        // Front face
-        -0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 0.0f,
-         0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 0.0f,
-         0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 0.0f,
-         0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 0.0f,
-        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 0.0f,
-        -0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 0.0f,
 
-        // Back face
-         0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 0.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 0.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 0.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 0.0f,
-         0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 0.0f,
-         0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 0.0f,
+    VBO_t unit_cube_buffer = createVBO(UNIT_CUBE_VERTICES, sizeof(UNIT_CUBE_VERTICES));
 
-        // Top face
-        -0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 1.0f,
-         0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 1.0f,
-         0.5f,  0.5f, -0.5f,  0.0f, 0.0f, 1.0f,
-         0.5f,  0.5f, -0.5f,  0.0f, 0.0f, 1.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f, 0.0f, 1.0f,
-        -0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 1.0f,
+    VBO_t axes_buffer = createVBO(AXES_LINES, sizeof(AXES_LINES));
 
-        // Bottom face
-        -0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 0.0f,
-         0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 0.0f,
-         0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 0.0f,
-         0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 0.0f,
-        -0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 0.0f,
-        -0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 0.0f,
+    VBO_t cone_buffer = createVBO(CONE_VERTICES, sizeof(CONE_VERTICES));
 
-        // Right face
-         0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 1.0f,
-         0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 1.0f,
-         0.5f,  0.5f, -0.5f,  1.0f, 0.0f, 1.0f,
-         0.5f,  0.5f, -0.5f,  1.0f, 0.0f, 1.0f,
-         0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 1.0f,
-         0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 1.0f,
-
-        // Left face
-        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 1.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 1.0f,
-        -0.5f,  0.5f,  0.5f,  0.0f, 1.0f, 1.0f,
-        -0.5f,  0.5f,  0.5f,  0.0f, 1.0f, 1.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 1.0f
-    };
-
-    float axis_lines[] = {
-        // x axis (b
-        -10.0f, 0.0f, 0.0f,  0.3f, 0.0f, 0.0f,
-         10.0f, 0.0f, 0.0f,  0.3f, 0.0f, 0.0f,
-
-        // y axis (green)
-         0.0f, -10.0f, 0.0f,  0.0f, 0.3f, 0.0f,
-         0.0f,  10.0f, 0.0f,  0.0f, 0.3f, 0.0f,
-
-        // z axis (blue)
-         0.0f, 0.0f, -10.0f,  0.0f, 0.0f, 0.3f,
-         0.0f, 0.0f,  10.0f,  0.0f, 0.0f, 0.3f,
-
-        // cross lines
-        10.0f, 0.0f, -10.0f,  0.3f, 0.3f, 0.3f,
-        -10.0f, 0.0f,  10.0f,  0.3f, 0.3f, 0.3f,
-
-        10.0f, 0.0f, 10.0f,  0.3f, 0.3f, 0.3f,
-        -10.0f, 0.0f,  -10.0f,  0.3f, 0.3f, 0.3f,
-    };
-
-    VBO_t unit_cube_buffer = createVBO(unit_cube_vertices, sizeof(unit_cube_vertices));
-
-    VBO_t axes_buffer = createVBO(axis_lines, sizeof(axis_lines));
+    sphere_mesh_t sphere_mesh = generateUnitSphere(15, 15);
+    VBO_t sphere_buffer = createVBO(sphere_mesh.vertices, sphere_mesh.data_size);
 
     ////////////////////////////////////////
     // SIM THREAD INIT                    //
@@ -204,7 +136,7 @@ int main(int argc, char *argv[]) {
         // update viewport for window resizing
         glViewport(0, 0, (int)sim.wp.window_size_x, (int)sim.wp.window_size_y);
 
-        // use shader progra
+        // use shader program
         glUseProgram(shaderProgram);
 
         // casts the camera to the required orientation and zoom (always points to the origin)
@@ -217,15 +149,34 @@ int main(int argc, char *argv[]) {
         glDrawArrays(GL_LINES, 0, 10);
 
         // draw planets
-        glBindVertexArray(unit_cube_buffer.VAO);
+        glBindVertexArray(sphere_buffer.VAO);
         for (int i = 0; i < sim.gb.count; i++) {
+            // create a scale matrix based on the radius of the planet (pulled from JSON data)
             float size_scale_factor = (float)sim.gb.radius[i] / SCALE;
             mat4 scale_mat = mat4_scale(size_scale_factor, size_scale_factor, size_scale_factor);
+            // create a translation matrix based on the current in-sim-world position of the planet
             mat4 translate_mat = mat4_translation((float)sim.gb.pos_x[i] / SCALE, (float)sim.gb.pos_y[i] / SCALE, (float)sim.gb.pos_z[i] / SCALE);
-            mat4 planet_model = mat4_mul(scale_mat, translate_mat);
-            setMatrixUniform(shaderProgram, "model", &planet_model);//
-            glDrawArrays(GL_TRIANGLES, 0, 36);
+            // multiply the two matrices together to get a final scale/position matrix for the planet model on the screen
+            mat4 planet_model = mat4_mul(translate_mat, scale_mat);
+            // apply matrix and render to screen
+            setMatrixUniform(shaderProgram, "model", &planet_model);
+            glDrawArrays(GL_TRIANGLES, 0, (GLsizei)sphere_mesh.vertex_count);
         }
+
+        // draw crafts
+        glBindVertexArray(cone_buffer.VAO);
+        for (int i = 0; i < sim.gs.count; i++) {
+            // create a scale matrix
+            float size_scale_factor = 0.1f; // arbitrary scale based on what looks nice on screen
+            mat4 scale_mat = mat4_scale(size_scale_factor, size_scale_factor, size_scale_factor);
+            // create a translation matrix based on the current in-sim-world position of the spacecraft
+            mat4 translate_mat = mat4_translation((float)sim.gs.pos_x[i] / SCALE, (float)sim.gs.pos_y[i] / SCALE, (float)sim.gs.pos_z[i] / SCALE);
+            // multiply the two matrices together to get a final scale/position matrix for the planet model on the screen
+            mat4 spacecraft_model = mat4_mul(translate_mat, scale_mat);
+            // apply matrix and render to screen
+            setMatrixUniform(shaderProgram, "model", &spacecraft_model);
+            glDrawArrays(GL_TRIANGLES, 0, 48);
+        }//
 
         ////////////////////////////////////////////////////////
         // END OPENGL RENDERER
@@ -262,6 +213,10 @@ int main(int argc, char *argv[]) {
     cleanup(&sim);
 
     // Cleanup OpenGL resources
+    freeSphere(&sphere_mesh);
+    deleteVBO(unit_cube_buffer);
+    deleteVBO(axes_buffer);
+    deleteVBO(sphere_buffer);
     glDeleteProgram(shaderProgram);
 
     fclose(filenames.global_data_FILE);

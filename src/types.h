@@ -199,4 +199,9 @@ typedef struct {
     float m[16]; // 4x4 matrix
 } mat4;
 
+typedef struct {
+    float* vertices;
+    size_t vertex_count;
+    size_t data_size;
+} sphere_mesh_t;
 #endif

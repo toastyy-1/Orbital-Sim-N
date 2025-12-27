@@ -21,14 +21,8 @@ mat4 createProjectionMatrix(float fov, float aspect, float near, float far);
 void setMatrixUniform(GLuint shaderProgram, const char* name, const mat4* matrix);
 void castCamera(sim_properties_t sim, GLuint shaderProgram);
 
-// matrix transformation functions
-mat4 mat4_identity(void);
-mat4 mat4_translation(float x, float y, float z);
-mat4 mat4_scale(float sx, float sy, float sz);
-mat4 mat4_rotationX(float angle);
-mat4 mat4_rotationY(float angle);
-mat4 mat4_rotationZ(float angle);
-mat4 mat4_mul(mat4 a, mat4 b);
-coord_t mat4_transformPoint(mat4 m, coord_t point);
+// sphere functions
+sphere_mesh_t generateUnitSphere(unsigned int stacks, unsigned int sectors);
+void freeSphere(sphere_mesh_t* sphere);
 
 #endif //ORBITSIMULATION_GL_RENDERER_H

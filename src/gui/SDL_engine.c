@@ -5,6 +5,7 @@
 #include <SDL3/SDL.h>
 #include <GL/glew.h>
 #include <GL/gl.h>
+#include "../math/matrix.h"
 
 // display error message using SDL dialog
 void displayError(const char* title, const char* message) {
@@ -112,8 +113,8 @@ static void handleMouseMotionEvent(const SDL_Event* event, sim_properties_t* sim
 // handles mouse button down events (button clicks and drag start)
 static void handleMouseButtonDownEvent(const SDL_Event* event, sim_properties_t* sim) {
     window_params_t* wp = &sim->wp;
-    body_properties_t* gb = &sim->gb;
-    spacecraft_properties_t* sc = &sim->gs;
+    // body_properties_t* gb = &sim->gb;
+    // spacecraft_properties_t* sc = &sim->gs;
 
     // check if right mouse button or middle mouse button (for dragging)
     if (event->button.button == SDL_BUTTON_RIGHT || event->button.button == SDL_BUTTON_MIDDLE) {

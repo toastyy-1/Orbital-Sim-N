@@ -96,6 +96,10 @@ set(SOURCES
         src/utility/telemetry_export.h
         src/gui/GL_renderer.h
         src/gui/GL_renderer.c
+        src/math/matrix.c
+        src/math/matrix.h
+        src/gui/models.c
+        src/gui/models.h
 )
 
 # Create executable
