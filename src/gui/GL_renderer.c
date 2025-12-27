@@ -274,3 +274,12 @@ mat4 mat4_mul(mat4 a, mat4 b) {
     }
     return r;
 }
+
+// transform a point by a matrix (for rotating camera position)
+coord_t mat4_transformPoint(mat4 m, coord_t point) {
+    coord_t result;
+    result.x = m.m[0] * point.x + m.m[4] * point.y + m.m[8]  * point.z + m.m[12];
+    result.y = m.m[1] * point.x + m.m[5] * point.y + m.m[9]  * point.z + m.m[13];
+    result.z = m.m[2] * point.x + m.m[6] * point.y + m.m[10] * point.z + m.m[14];
+    return result;
+}

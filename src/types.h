@@ -32,6 +32,7 @@ typedef struct {
     double meters_per_pixel;
 
     bool is_dragging;
+    float drag_last_x, drag_last_y;
 
     bool reset_sim;
     bool is_zooming;

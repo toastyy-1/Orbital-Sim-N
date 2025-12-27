@@ -1,4 +1,5 @@
 #include "../gui/SDL_engine.h"
+#include "../gui/GL_renderer.h"
 #include "../globals.h"
 #include "../sim/bodies.h"
 #include <SDL3/SDL.h>
@@ -91,6 +92,20 @@ static void handleMouseMotionEvent(const SDL_Event* event, sim_properties_t* sim
 
     // viewport dragging
     if (wp->is_dragging) {
+        // calculate mouse movement delta
+        float delta_x = event->motion.x - wp->drag_last_x;
+
+        // convert mouse movement to rotation angle (adjust sensitivity as needed)
+        float rotation_sensitivity = 0.01f;
+        float rotation_angle = delta_x * rotation_sensitivity;
+
+        // rotate camera position around Y axis
+        mat4 rotation = mat4_rotationY(rotation_angle);
+        wp->camera_pos = mat4_transformPoint(rotation, wp->camera_pos);
+
+        // update last mouse position for next frame
+        wp->drag_last_x = event->motion.x;
+        wp->drag_last_y = event->motion.y;
     }
 }
 
@@ -103,6 +118,8 @@ static void handleMouseButtonDownEvent(const SDL_Event* event, sim_properties_t*
     // check if right mouse button or middle mouse button (for dragging)
     if (event->button.button == SDL_BUTTON_RIGHT || event->button.button == SDL_BUTTON_MIDDLE) {
         wp->is_dragging = true;
+        wp->drag_last_x = event->button.x;
+        wp->drag_last_y = event->button.y;
     }
 }
 

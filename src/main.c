@@ -208,7 +208,6 @@ int main(int argc, char *argv[]) {
 
         // casts the camera to the required orientation and zoom (always points to the origin)
         castCamera(sim, shaderProgram);
-        castCamera(sim, shaderProgram);
 
         // draw coordinate plane
         glBindVertexArray(axes_buffer.VAO);

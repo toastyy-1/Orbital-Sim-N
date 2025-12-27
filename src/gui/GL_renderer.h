@@ -29,5 +29,6 @@ mat4 mat4_rotationX(float angle);
 mat4 mat4_rotationY(float angle);
 mat4 mat4_rotationZ(float angle);
 mat4 mat4_mul(mat4 a, mat4 b);
+coord_t mat4_transformPoint(mat4 m, coord_t point);
 
 #endif //ORBITSIMULATION_GL_RENDERER_H
