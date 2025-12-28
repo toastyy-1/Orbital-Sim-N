@@ -45,6 +45,8 @@ typedef struct {
 
     bool craft_view_shown;
     bool main_view_shown;
+
+    int planet_model_vertex_count;
 } window_params_t;
 
 typedef struct {

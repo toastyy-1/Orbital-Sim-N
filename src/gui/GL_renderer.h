@@ -34,4 +34,9 @@ text_renderer_t initTextRenderer(const char* fontPath, unsigned int fontSize, in
 void renderText(text_renderer_t* renderer, const char* text, float x, float y, float scale, float color[3]);
 void cleanupTextRenderer(text_renderer_t* renderer);
 
+// features
+void renderCoordinatePlane(sim_properties_t sim, GLuint shader_program, VBO_t axes_buffer);
+void renderPlanets(sim_properties_t sim, GLuint shader_program, VBO_t planet_shape_buffer);
+void renderCrafts(sim_properties_t sim, GLuint shader_program, VBO_t craft_shape_buffer);
+
 #endif //ORBITSIMULATION_GL_RENDERER_H

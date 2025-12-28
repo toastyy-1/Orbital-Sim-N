@@ -103,6 +103,7 @@ int main(int argc, char *argv[]) {
 
     sphere_mesh_t sphere_mesh = generateUnitSphere(15, 15);
     VBO_t sphere_buffer = createVBO(sphere_mesh.vertices, sphere_mesh.data_size);
+    sim.wp.planet_model_vertex_count = (int)sphere_mesh.vertex_count; // I couldn't think of a better way to do this ngl
 
     ////////////////////////////////////////
     // SIM THREAD INIT                    //
@@ -154,41 +155,15 @@ int main(int argc, char *argv[]) {
         castCamera(sim, shaderProgram);
 
         // draw coordinate plane
-        glBindVertexArray(axes_buffer.VAO);
-        mat4 axes_model_mat = mat4_scale(sim.wp.zoom, sim.wp.zoom, sim.wp.zoom);
-        setMatrixUniform(shaderProgram, "model", &axes_model_mat);
-        glDrawArrays(GL_LINES, 0, 10);
+        renderCoordinatePlane(sim, shaderProgram, axes_buffer);
 
         // draw planets
-        glBindVertexArray(sphere_buffer.VAO);
-        for (int i = 0; i < sim.gb.count; i++) {
-            // create a scale matrix based on the radius of the planet (pulled from JSON data)
-            float size_scale_factor = (float)sim.gb.radius[i] / SCALE;
-            mat4 scale_mat = mat4_scale(size_scale_factor, size_scale_factor, size_scale_factor);
-            // create a translation matrix based on the current in-sim-world position of the planet
-            mat4 translate_mat = mat4_translation((float)sim.gb.pos_x[i] / SCALE, (float)sim.gb.pos_y[i] / SCALE, (float)sim.gb.pos_z[i] / SCALE);
-            // multiply the two matrices together to get a final scale/position matrix for the planet model on the screen
-            mat4 planet_model = mat4_mul(translate_mat, scale_mat);
-            // apply matrix and render to screen
-            setMatrixUniform(shaderProgram, "model", &planet_model);
-            glDrawArrays(GL_TRIANGLES, 0, (GLsizei)sphere_mesh.vertex_count);
-        }
+        renderPlanets(sim, shaderProgram, sphere_buffer);
 
         // draw crafts
-        glBindVertexArray(cone_buffer.VAO);
-        for (int i = 0; i < sim.gs.count; i++) {
-            // create a scale matrix
-            float size_scale_factor = 0.1f; // arbitrary scale based on what looks nice on screen
-            mat4 scale_mat = mat4_scale(size_scale_factor, size_scale_factor * 2, size_scale_factor);
-            // create a translation matrix based on the current in-sim-world position of the spacecraft
-            mat4 translate_mat = mat4_translation((float)sim.gs.pos_x[i] / SCALE, (float)sim.gs.pos_y[i] / SCALE, (float)sim.gs.pos_z[i] / SCALE);
-            // multiply the two matrices together to get a final scale/position matrix for the planet model on the screen
-            mat4 spacecraft_model = mat4_mul(translate_mat, scale_mat);
-            // apply matrix and render to screen
-            setMatrixUniform(shaderProgram, "model", &spacecraft_model);
-            glDrawArrays(GL_TRIANGLES, 0, 48);
-        }
-        
+        renderCrafts(sim, shaderProgram, cone_buffer);
+
+        // stats display
         renderText(&textRenderer, "Hello, world!", 10.0f, 10.0f, 1.0f, white_color);
 
         ////////////////////////////////////////////////////////
