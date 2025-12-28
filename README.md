@@ -1,12 +1,6 @@
 # Orbital Simulation Software N
 
-A real-time gravitational physics simulator built in C with SDL3.
-
-## Overview
-
-This program simulates gravitational interactions between celestial bodies using Newton's law of universal gravitation.
-
-## Features
+A real-time 3D gravitational physics simulator built in C with OpenGL and SDL3.
 
 ### Gravitational Physics
 - Real-time gravitational force calculations using F = GMm/r²
@@ -15,6 +9,7 @@ This program simulates gravitational interactions between celestial bodies using
 - Collision Detection
 - Adjustable simulation speed
 
+!!!!NEEDS TO BE UPDATED:
 ###  Spacecraft Systems
   - Thrust  with configurable specific impulse
   - Fuel consumption based on mass flow rate
@@ -42,8 +37,10 @@ The simulation is configured via `simulation_data.json`:
       "mass": 5.972e24,
       "pos_x": 0,
       "pos_y": 0,
+      "pos_z": 0,
       "vel_x": 0,
       "vel_y": 0,
+      "vel_z": 0,
       "radius": 6371000
     }
   ]
@@ -66,8 +63,10 @@ The simulation is configured via `simulation_data.json`:
       "name": "Example Craft",
       "pos_x": 6671000.0,
       "pos_y": 0.0,
+      "pos_z": 0.0,
       "vel_x": 0.0,
       "vel_y": 7700.0,
+      "vel_z": 0.0,
       "dry_mass": 5500.0,
       "fuel_mass": 18000.0,
       "thrust": 450000.0,
@@ -113,22 +112,22 @@ The simulation is configured via `simulation_data.json`:
 - `heading`: Direction offset (radians)
 - `throttle`: Engine power (0.0 to 1.0)
 
-### Controls
+## Building
 
-| Key/Action                     | Function |
-|--------------------------------|----------|
-| **Space**                      | Pause/Resume simulation |
-| **R**                          | Reset simulation to initial state |
-| **Right Mouse Drag**           | Pan viewport |
-| **Mouse Wheel**                | Zoom in/out |
-| **Hover + Scroll** (Speed Box) | Adjust time step |
-| **Craft View Button**          | Toggle spacecraft telemetry window |
-| **Show Stats Button**          | Toggle statistics panel |
-
-### Compilation Dependencies
-- **SDL3**: Graphics rendering and window management
-- **SDL3_ttf**: TrueType font rendering
+### Dependencies
+- **SDL3**: Window management and OpenGL context creation
+- **OpenGL**: 3D graphics rendering
+- **GLEW**: OpenGL extension loading library
+- **FreeType**: TrueType font rendering for on-screen text
 - **cJSON**: JSON parsing library
+- **pthreads**: Multi-threading support (or PThreads4W on Windows)
 
-### Font Files
-- `CascadiaCode.ttf` (or modify `main.c` to use an alternative font)
+### Required Files
+- **Shader files**: `shaders/simple.vert` and `shaders/simple.frag`
+- **Font file**: `font.ttf` (placed in build directory)
+- **Configuration**: `simulation_data.json`
+
+### Build Instructions
+Use CMake to build the project:
+
+The build system automatically copies required assets (shaders, fonts, data files) to the build directory.
