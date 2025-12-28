@@ -498,6 +498,7 @@ void cleanupTextRenderer(text_renderer_t* renderer) {
     }
 }
 
+// render the coordinate plane to the screen
 void renderCoordinatePlane(sim_properties_t sim, GLuint shader_program, VBO_t axes_buffer) {
     glBindVertexArray(axes_buffer.VAO);
     mat4 axes_model_mat = mat4_scale(sim.wp.zoom, sim.wp.zoom, sim.wp.zoom);
@@ -505,6 +506,7 @@ void renderCoordinatePlane(sim_properties_t sim, GLuint shader_program, VBO_t ax
     glDrawArrays(GL_LINES, 0, 10);
 }
 
+// render the sim planets to the screen
 void renderPlanets(sim_properties_t sim, GLuint shader_program, VBO_t planet_shape_buffer) {
     glBindVertexArray(planet_shape_buffer.VAO);
     for (int i = 0; i < sim.gb.count; i++) {
@@ -521,6 +523,7 @@ void renderPlanets(sim_properties_t sim, GLuint shader_program, VBO_t planet_sha
     }
 }
 
+// render the sim crafts to the renderer
 void renderCrafts(sim_properties_t sim, GLuint shader_program, VBO_t craft_shape_buffer) {
     glBindVertexArray(craft_shape_buffer.VAO);
     for (int i = 0; i < sim.gs.count; i++) {
@@ -534,5 +537,33 @@ void renderCrafts(sim_properties_t sim, GLuint shader_program, VBO_t craft_shape
         // apply matrix and render to screen
         setMatrixUniform(shader_program, "model", &spacecraft_model);
         glDrawArrays(GL_TRIANGLES, 0, 48);
+    }
+}
+
+// render the stats on the screen
+void renderStats(sim_properties_t sim, text_renderer_t text_renderer) {
+
+    float white_color[] = { 1.0f, 1.0f, 1.0f};
+
+    // calculate proper line height
+    float line_height = (float)text_renderer.characters['H'].height * 1.5f;
+    float cursor_starting_pos[2] = { 10.0f, (float)sim.wp.window_size_y - line_height - 10.0f}; // starting pos of writing
+    float cursor_pos[2] = { cursor_starting_pos[0], cursor_starting_pos[1] };
+
+    // text buffer used to hold text written to the stats window
+    char text_buffer[32];
+
+    // write planet velocities
+    for (int i = 0; i < sim.gb.count; i++) {
+        snprintf(text_buffer, sizeof(text_buffer), "%s's velocity: %.3f", sim.gb.names[i], sim.gb.vel[i]);
+        renderText(&text_renderer, text_buffer, cursor_pos[0], cursor_pos[1], 1.0f, white_color);
+        cursor_pos[1] -= line_height;
+    }
+
+    // write planet KE
+    for (int i = 0; i < sim.gb.count; i++) {
+        snprintf(text_buffer, sizeof(text_buffer), "%s's KE: %.3f", sim.gb.names[i], sim.gb.kinetic_energy[i]);
+        renderText(&text_renderer, text_buffer, cursor_pos[0], cursor_pos[1], 1.0f, white_color);
+        cursor_pos[1] -= line_height;
     }
 }

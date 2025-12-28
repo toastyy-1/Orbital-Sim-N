@@ -44,6 +44,8 @@ window_params_t init_window_params() {
     wp.main_view_shown = true;
     wp.craft_view_shown = false;
 
+    wp.frame_counter = 0;
+
     return wp;
 }
 

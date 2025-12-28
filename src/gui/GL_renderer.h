@@ -38,5 +38,6 @@ void cleanupTextRenderer(text_renderer_t* renderer);
 void renderCoordinatePlane(sim_properties_t sim, GLuint shader_program, VBO_t axes_buffer);
 void renderPlanets(sim_properties_t sim, GLuint shader_program, VBO_t planet_shape_buffer);
 void renderCrafts(sim_properties_t sim, GLuint shader_program, VBO_t craft_shape_buffer);
+void renderStats(sim_properties_t sim, text_renderer_t text_renderer);
 
 #endif //ORBITSIMULATION_GL_RENDERER_H

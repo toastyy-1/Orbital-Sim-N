@@ -88,8 +88,7 @@ int main(int argc, char *argv[]) {
     glEnable(GL_DEPTH_TEST);
 
     // initialize the text renderer
-    text_renderer_t textRenderer = initTextRenderer("font.ttf", 24, (int)sim.wp.window_size_x, (int)sim.wp.window_size_y);
-    float white_color[] = { 1.0f, 1.0f, 1.0f};
+    text_renderer_t textRenderer = initTextRenderer("font.ttf", 16, (int)sim.wp.window_size_x, (int)sim.wp.window_size_y);
 
     ////////////////////////////////////////
     // MESH/BUFFER SETUP                  //
@@ -164,7 +163,8 @@ int main(int argc, char *argv[]) {
         renderCrafts(sim, shaderProgram, cone_buffer);
 
         // stats display
-        renderText(&textRenderer, "Hello, world!", 10.0f, 10.0f, 1.0f, white_color);
+        // TODO: fix the MAJOR slowdown involved with rendering text atm
+        renderStats(sim, textRenderer);
 
         ////////////////////////////////////////////////////////
         // END OPENGL RENDERER
@@ -179,6 +179,9 @@ int main(int argc, char *argv[]) {
 
         // unlock sim vars mutex when done
         pthread_mutex_unlock(&sim_vars_mutex);
+
+        // increment frame counter for frame-based timing
+        sim.wp.frame_counter++;
 
         // present the renderer to the screen
         SDL_GL_SwapWindow(window);
