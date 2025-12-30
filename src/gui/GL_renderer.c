@@ -523,7 +523,7 @@ void renderStats(sim_properties_t sim, line_batch_t* line_batch, font_t* font) {
 
     // calculate proper line height
     float line_height = 20.0f; // placeholder
-    float cursor_starting_pos[2] = { 10.0f, (float)sim.wp.window_size_y - line_height - 10.0f}; // starting pos of writing
+    float cursor_starting_pos[2] = { 10.0f, line_height + 10.0f}; // starting pos of writing
     float cursor_pos[2] = { cursor_starting_pos[0], cursor_starting_pos[1] };
 
     // text buffer used to hold text written to the stats window
@@ -533,7 +533,7 @@ void renderStats(sim_properties_t sim, line_batch_t* line_batch, font_t* font) {
     for (int i = 0; i < sim.gb.count; i++) {
         snprintf(text_buffer, sizeof(text_buffer), "%s's velocity: %.3f m/s", sim.gb.names[i], sim.gb.vel[i]);
         addText(font, cursor_pos[0], cursor_pos[1], text_buffer, 1.0f);
-        cursor_pos[1] -= line_height;
+        cursor_pos[1] += line_height;
     }
 
     // draw lines between planets to show distance

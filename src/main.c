@@ -130,9 +130,6 @@ int main(int argc, char *argv[]) {
     readSimulationJSON("simulation_data.json", &sim.gb, &sim.gs);
     sim.wp.time_step = 0.01;
 
-    // now that everything is initialized, start the simulation
-    sim.wp.sim_running = true;
-
     ////////////////////////////////////////////////////////
     // simulation loop                                    //
     ////////////////////////////////////////////////////////
@@ -171,6 +168,9 @@ int main(int argc, char *argv[]) {
 
         // stats display
         renderStats(sim, &line_batch, &font);
+
+        // command window display
+        renderCMDWindow(&sim, &font);
 
         // render all queued lines
         renderLines(&line_batch, shaderProgram);

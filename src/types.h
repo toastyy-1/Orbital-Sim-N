@@ -47,6 +47,10 @@ typedef struct {
 
     int planet_model_vertex_count;
     int frame_counter;
+
+    char cmd_text_box[256];
+    int cmd_text_box_length;
+    float cmd_pos_x, cmd_pos_y;
 } window_params_t;
 
 typedef struct {

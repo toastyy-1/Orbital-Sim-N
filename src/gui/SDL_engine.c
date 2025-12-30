@@ -1,4 +1,7 @@
 #include "../gui/SDL_engine.h"
+
+#include <stdlib.h>
+
 #include "../gui/GL_renderer.h"
 #include "../globals.h"
 #include "../sim/bodies.h"
@@ -10,6 +13,7 @@
 #include <GL/gl.h>
 #endif
 #include "../math/matrix.h"
+#include <string.h>
 
 // display error message using SDL dialog
 void displayError(const char* title, const char* message) {
@@ -44,6 +48,12 @@ window_params_t init_window_params() {
     wp.craft_view_shown = false;
 
     wp.frame_counter = 0;
+
+    // init text input
+    wp.cmd_text_box[0] = '\0';
+    wp.cmd_text_box_length = 0;
+    wp.cmd_pos_x = 0.02f * wp.window_size_x;
+    wp.cmd_pos_y = wp.window_size_y - 0.1f * wp.window_size_y;
 
     return wp;
 }
@@ -91,6 +101,9 @@ SDL_GL_init_t init_SDL_OPENGL_window(const char* title, int width, int height, U
     printf("OpenGL version: %s\n", glGetString(GL_VERSION)); // yes this might show a warning, it's supposed to be like this
     printf("GLEW version: %s\n", glewGetString(GLEW_VERSION));
 
+    // enable text input
+    SDL_StartTextInput(result.window);
+
     return result;
 }
 
@@ -127,7 +140,6 @@ static void handleMouseMotionEvent(const SDL_Event* event, sim_properties_t* sim
     }
 }
 
-// handles mouse button down events (button clicks and drag start)
 static void handleMouseButtonDownEvent(const SDL_Event* event, sim_properties_t* sim) {
     window_params_t* wp = &sim->wp;
     // body_properties_t* gb = &sim->gb;
@@ -163,28 +175,39 @@ static void handleMouseWheelEvent(const SDL_Event* event, sim_properties_t* sim)
     }
 }
 
-// handles keyboard events (pause/play, reset)
+//
+static void parseRunCommands(char* cmd, sim_properties_t* sim) {
+    if (strncmp(cmd, "step ", 4) == 0) {
+        char* argument = cmd + 4;
+        sim->wp.time_step = atof(argument);
+    }
+    else if (strcmp(cmd, "pause") == 0 || strcmp(cmd, "p") == 0) sim->wp.sim_running = false;
+    else if (strcmp(cmd, "resume") == 0 || strcmp(cmd, "r") == 0) sim->wp.sim_running = true;
+}
+
+// handles keyboard events
 static void handleKeyboardEvent(const SDL_Event* event, sim_properties_t* sim) {
     window_params_t* wp = &sim->wp;
 
-    if(event->key.key == SDLK_SPACE) {
-        if (wp->sim_running == false) {
-            wp->sim_running = true;
-        }
-        else if (wp->sim_running == true) {
-            wp->sim_running = false;
-        }
+    if (event->key.key == SDLK_BACKSPACE && wp->cmd_text_box_length > 0) {
+        wp->cmd_text_box_length -= 1;
+        wp->cmd_text_box[wp->cmd_text_box_length] = '\0';
     }
-    else if (event->key.key == SDLK_R) {
-        wp->reset_sim = true;
+    else if (event->key.key == SDLK_RETURN || event->key.key == SDLK_KP_ENTER) {
+        parseRunCommands(wp->cmd_text_box, sim);
+        wp->cmd_text_box[0] = '\0';
+        wp->cmd_text_box_length = 0;
     }
-    else if (event->key.key == SDLK_D) {
-        if (wp->data_logging_enabled) {
-            wp->data_logging_enabled = false;
-        }
-        else if (!wp->data_logging_enabled) {
-            wp->data_logging_enabled = true;
-        }
+}
+
+// handles text input events
+static void handleTextInputEvent(const SDL_Event* event, sim_properties_t* sim) {
+    window_params_t* wp = &sim->wp;
+
+    size_t text_len = strlen(event->text.text);
+    if (wp->cmd_text_box_length + text_len < 255) {
+        strcat(wp->cmd_text_box, event->text.text);
+        wp->cmd_text_box_length += text_len;
     }
 }
 
@@ -194,6 +217,9 @@ static void handleWindowResizeEvent(const SDL_Event* event, sim_properties_t* si
 
     wp->window_size_x = (float)event->window.data1;
     wp->window_size_y = (float)event->window.data2;
+
+    wp->cmd_pos_x = 0.02f * wp->window_size_x;
+    wp->cmd_pos_y = wp->window_size_y - 0.1f * wp->window_size_y;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -234,10 +260,33 @@ void runEventCheck(SDL_Event* event, sim_properties_t* sim) {
         else if (event->type == SDL_EVENT_KEY_DOWN && event->window.windowID == wp->main_window_ID) {
             handleKeyboardEvent(event, sim);
         }
-        // check if window is resized (only for main window)
+        // check if text input
+        else if (event->type == SDL_EVENT_TEXT_INPUT && event->window.windowID == wp->main_window_ID) {
+            handleTextInputEvent(event, sim);
+        }
+        // check if window is resized
         else if (event->type == SDL_EVENT_WINDOW_RESIZED &&
                  event->window.windowID == wp->main_window_ID) {
             handleWindowResizeEvent(event, sim);
         }
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// TEXT INPUT RENDERING
+////////////////////////////////////////////////////////////////////////////////////////////////////
+void renderCMDWindow(sim_properties_t* sim, font_t* font) {
+    window_params_t* wp = &sim->wp;
+
+    float x = wp->cmd_pos_x;
+    float y = wp->cmd_pos_y;
+
+    addText(font, x, y, wp->cmd_text_box, 1.0f);
+
+    // blinking cursor
+    if ((wp->frame_counter / 30) % 2 == 0) {
+        char cursor_text[256];
+        snprintf(cursor_text, sizeof(cursor_text), "%s_", wp->cmd_text_box);
+        addText(font, x, y, cursor_text, 1.0f);
     }
 }
