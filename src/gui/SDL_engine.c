@@ -33,7 +33,6 @@ window_params_t init_window_params() {
 
     wp.meters_per_pixel = 100000.0;
 
-    wp.font_size = (float)wp.window_size_x / 50;
     wp.window_open = true;
     wp.sim_running = false;  // start paused until setup is complete
     wp.data_logging_enabled = false;
