@@ -36,7 +36,7 @@ void craft_checkBurnSchedule(const spacecraft_properties_t* sc, const int i, con
                 const double rel_vel_x = sc->vel_x[i] - gb->vel_x[target_id];
                 const double rel_vel_y = sc->vel_y[i] - gb->vel_y[target_id];
                 const double velocity_angle = atan2(rel_vel_y, rel_vel_x);
-                final_attitude = velocity_angle + M_PI / 2.0 + burn->burn_heading;
+                final_attitude = velocity_angle + PI / 2.0 + burn->burn_heading;
             }
 
             sc->attitude[i] = final_attitude;
