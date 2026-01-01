@@ -5,13 +5,13 @@
 #include <stdio.h>
 #include <SDL3/SDL.h>
 #include <GL/glew.h>
+
+#include "globals.h"
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
 #else
 #include <GL/gl.h>
 #endif
-
-#define PATH_CACHE_LENGTH 100
 
 typedef struct {
     float x, y, z;
@@ -34,6 +34,9 @@ typedef struct {
 
     double meters_per_pixel;
 
+    int planet_model_vertex_count;
+    int frame_counter;
+
     bool is_dragging;
     float drag_last_x, drag_last_y;
 
@@ -42,11 +45,12 @@ typedef struct {
     bool is_zooming_out;
     bool is_zooming_in;
 
-    // debug stuff
+    // visual stuff
     bool draw_lines_between_bodies;
+    bool draw_body_paths;
+    int body_path_counter;
+    bool body_path_filled;
 
-    int planet_model_vertex_count;
-    int frame_counter;
 } window_params_t;
 
 typedef struct {
@@ -81,6 +85,8 @@ typedef struct {
     double* force_y;
     double* force_z;
     double* kinetic_energy;
+
+    coord_t** path_cache; // array of pointers, one per body, each pointing to PATH_CACHE_LENGTH coords
 } body_properties_t;
 
 typedef struct {

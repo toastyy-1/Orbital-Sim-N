@@ -169,8 +169,8 @@ int main(int argc, char *argv[]) {
         // stats display
         renderStats(sim, &font);
 
-        // renders debug things if they are enabled
-        renderDebug(sim, &line_batch);
+        // renders visuals things if they are enabled
+        renderVisuals(&sim, &line_batch);
 
         // command window display
         renderCMDWindow(&sim, &font);

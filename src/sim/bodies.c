@@ -107,16 +107,7 @@ void body_addOrbitalBody(body_properties_t* gb, const char* name, const double m
     double* temp_force_y = (double*)realloc(gb->force_y, new_size * sizeof(double));
     double* temp_force_z = (double*)realloc(gb->force_z, new_size * sizeof(double));
     double* temp_kinetic = (double*)realloc(gb->kinetic_energy, new_size * sizeof(double));
-
-    if (!temp_names || !temp_mass || !temp_radius || !temp_pixel_radius ||
-        !temp_pos_x || !temp_pos_y || !temp_pos_z ||
-        !temp_vel_x || !temp_vel_y || !temp_vel_z || !temp_vel ||
-        !temp_acc_x || !temp_acc_y || !temp_acc_z ||
-        !temp_acc_x_prev || !temp_acc_y_prev || !temp_acc_z_prev ||
-        !temp_force_x || !temp_force_y || !temp_force_z || !temp_kinetic) {
-        displayError("ERROR", "Error: Failed to allocate memory for new body\n");
-        return;
-    }
+    coord_t** temp_path_cache = (coord_t**)realloc(gb->path_cache, new_size * sizeof(coord_t*));
 
     gb->names = temp_names;
     gb->mass = temp_mass;
@@ -139,6 +130,7 @@ void body_addOrbitalBody(body_properties_t* gb, const char* name, const double m
     gb->force_y = temp_force_y;
     gb->force_z = temp_force_z;
     gb->kinetic_energy = temp_kinetic;
+    gb->path_cache = temp_path_cache;
 
     int idx = gb->count;
 
@@ -175,6 +167,13 @@ void body_addOrbitalBody(body_properties_t* gb, const char* name, const double m
     gb->force_y[idx] = 0.0;
     gb->force_z[idx] = 0.0;
     gb->kinetic_energy[idx] = 0.5 * mass * gb->vel[idx] * gb->vel[idx];
+
+    // allocate path cache array for this body
+    gb->path_cache[idx] = (coord_t*)calloc(PATH_CACHE_LENGTH, sizeof(coord_t));
+    if (gb->path_cache[idx] == NULL) {
+        displayError("ERROR", "Error: Failed to allocate memory for path cache\n");
+        return;
+    }
 
     // increment the body count
     gb->count++;

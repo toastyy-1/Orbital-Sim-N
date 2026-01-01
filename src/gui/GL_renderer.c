@@ -567,18 +567,50 @@ void renderStats(sim_properties_t sim, font_t* font) {
 }
 
 // renders debug features when they are enabled
-void renderDebug(const sim_properties_t sim, line_batch_t* line_batch) {
-
-    if (sim.wp.draw_lines_between_bodies) {
+void renderVisuals(sim_properties_t* sim, line_batch_t* line_batch) {
+    if (sim->wp.draw_lines_between_bodies) {
         // draw lines between planets to show distance
-        for (int i = 0; i < sim.gb.count; i++) {
+        for (int i = 0; i < sim->gb.count; i++) {
             // planet pos 1
-            coord_t pp1 = { (float)sim.gb.pos_x[i] / SCALE, (float)sim.gb.pos_y[i] / SCALE, (float)sim.gb.pos_z[i] / SCALE };
+            coord_t pp1 = { (float)sim->gb.pos_x[i] / SCALE, (float)sim->gb.pos_y[i] / SCALE, (float)sim->gb.pos_z[i] / SCALE };
             int pp2idx = i + 1;
-            if (i + 1 > sim.gb.count - 1) pp2idx = 0;
+            if (i + 1 > sim->gb.count - 1) pp2idx = 0;
             // planet pos 2
-            coord_t pp2 = { (float)sim.gb.pos_x[pp2idx] / SCALE, (float)sim.gb.pos_y[pp2idx] / SCALE, (float)sim.gb.pos_z[pp2idx] / SCALE };
+            coord_t pp2 = { (float)sim->gb.pos_x[pp2idx] / SCALE, (float)sim->gb.pos_y[pp2idx] / SCALE, (float)sim->gb.pos_z[pp2idx] / SCALE };
             addLine(line_batch, pp1.x, pp1.y, pp1.z, pp2.x, pp2.y, pp2.z, 1, 1, 1);
+        }
+    }
+
+    // render body paths
+    if (sim->wp.draw_body_paths) {
+        // store current positions in the path cache
+        for (int i = 0; i < sim->gb.count; i++) {
+            int idx = sim->wp.body_path_counter;
+            sim->gb.path_cache[i][idx].x = (float)sim->gb.pos_x[i] / SCALE;
+            sim->gb.path_cache[i][idx].y = (float)sim->gb.pos_y[i] / SCALE;
+            sim->gb.path_cache[i][idx].z = (float)sim->gb.pos_z[i] / SCALE;
+        }
+
+        // draw lines between cached positions
+        for (int i = 0; i < sim->gb.count; i++) {
+            for (int j = 0; j < PATH_CACHE_LENGTH - 1; j++) {
+                int curr_idx = (sim->wp.body_path_counter + j + 1) % PATH_CACHE_LENGTH;
+                int next_idx = (sim->wp.body_path_counter + j + 2) % PATH_CACHE_LENGTH;
+
+                coord_t p1 = sim->gb.path_cache[i][curr_idx];
+                coord_t p2 = sim->gb.path_cache[i][next_idx];
+
+                // only draw if both points are valid (not zero)
+                if ((p1.x != 0.0f || p1.y != 0.0f || p1.z != 0.0f) &&
+                    (p2.x != 0.0f || p2.y != 0.0f || p2.z != 0.0f)) {
+                    addLine(line_batch, p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, 0.5f, 0.5f, 0.5f);
+                    }
+            }
+        }
+
+        sim->wp.body_path_counter++;
+        if (sim->wp.body_path_counter >= PATH_CACHE_LENGTH) {
+            sim->wp.body_path_counter = 0;
         }
     }
 }

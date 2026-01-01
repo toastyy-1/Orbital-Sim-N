@@ -63,6 +63,8 @@ void resetSim(sim_properties_t* sim) {
     wp->sim_time = 0;
     // change sim reset flag back to false
     wp->reset_sim = false;
+    wp->body_path_counter = 0;
+    wp->body_path_filled = false;
 
     // free all bodies from memory
     if (gb != NULL) {
@@ -92,7 +94,14 @@ void resetSim(sim_properties_t* sim) {
         free(gb->force_z);
         free(gb->kinetic_energy);
 
+        // free path cache arrays
+        for (int i = 0; i < gb->count; i++) {
+            free(gb->path_cache[i]);
+        }
+        free(gb->path_cache);
+
         gb->count = 0;
+        gb->path_cache = NULL;
         gb->names = NULL;
         gb->mass = NULL;
         gb->radius = NULL;
@@ -300,6 +309,14 @@ void cleanup(sim_properties_t* sim) {
     free(gb->force_y);
     free(gb->force_z);
     free(gb->kinetic_energy);
+
+    // free path cache arrays
+    if (gb->path_cache != NULL) {
+        for (int i = 0; i < gb->count; i++) {
+            free(gb->path_cache[i]);
+        }
+        free(gb->path_cache);
+    }
 
     // free all spacecraft
     for (int i = 0; i < sc->count; i++) {
