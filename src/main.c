@@ -92,9 +92,17 @@ int main(int argc, char *argv[]) {
 
     // create the shader programs
     GLuint shaderProgram = createShaderProgram("shaders/simple.vert", "shaders/simple.frag");
+    if (shaderProgram == 0) {
+        displayError("Shader Error", "Failed to create shader program. Check console for details.");
+        return 1;
+    }
 
     // enable depth testing
     glEnable(GL_DEPTH_TEST);
+
+    // enable blending for transparency
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     ////////////////////////////////////////
     // MESH/BUFFER SETUP                  //
@@ -116,6 +124,10 @@ int main(int argc, char *argv[]) {
 
     // initialize font for text rendering
     font_t font = initFont("assets/font.ttf", 24.0f);
+    if (font.shader == 0) {
+        displayError("Font Error", "Failed to initialize font. Check console for details.");
+        return 1;
+    }
 
     ////////////////////////////////////////
     // SIM THREAD INIT                    //

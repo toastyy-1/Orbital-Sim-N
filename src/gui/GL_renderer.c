@@ -11,7 +11,7 @@
 #include "../math/matrix.h"
 
 char* loadShaderSource(const char* filepath) {
-    FILE* file = fopen(filepath, "r");
+    FILE* file = fopen(filepath, "rb");  // Open in binary mode to avoid Windows CRLF conversion issues
     if (!file) {
         fprintf(stderr, "Failed to open shader file: %s\n", filepath);
         return NULL;
@@ -22,9 +22,14 @@ char* loadShaderSource(const char* filepath) {
     fseek(file, 0, SEEK_SET);
 
     char* source = (char*)malloc(size + 1);
+    if (!source) {
+        fprintf(stderr, "Failed to allocate memory for shader source\n");
+        fclose(file);
+        return NULL;
+    }
 
-    fread(source, 1, size, file);
-    source[size] = '\0';
+    size_t bytesRead = fread(source, 1, size, file);
+    source[bytesRead] = '\0';  // Use actual bytes read, not file size
 
     fclose(file);
     return source;
@@ -35,21 +40,67 @@ GLuint createShaderProgram(const char* vertexPath, const char* fragmentPath) {
     char* vertexShaderSource = loadShaderSource(vertexPath);
     char* fragmentShaderSource = loadShaderSource(fragmentPath);
 
+    if (!vertexShaderSource) {
+        fprintf(stderr, "Failed to load vertex shader: %s\n", vertexPath);
+        return 0;
+    }
+    if (!fragmentShaderSource) {
+        fprintf(stderr, "Failed to load fragment shader: %s\n", fragmentPath);
+        free(vertexShaderSource);
+        return 0;
+    }
+
     // compile the vertex shader
     GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShader, 1, (const char**)&vertexShaderSource, NULL);
     glCompileShader(vertexShader);
+
+    // check vertex shader compilation
+    GLint success;
+    GLchar infoLog[512];
+    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+        fprintf(stderr, "ERROR: Vertex shader compilation failed (%s):\n%s\n", vertexPath, infoLog);
+        free(vertexShaderSource);
+        free(fragmentShaderSource);
+        return 0;
+    }
 
     // compile the fragment shader
     GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fragmentShader, 1, (const char**)&fragmentShaderSource, NULL);
     glCompileShader(fragmentShader);
 
+    // check fragment shader compilation
+    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
+        fprintf(stderr, "ERROR: Fragment shader compilation failed (%s):\n%s\n", fragmentPath, infoLog);
+        glDeleteShader(vertexShader);
+        free(vertexShaderSource);
+        free(fragmentShaderSource);
+        return 0;
+    }
+
     // link the shaders into a program
     GLuint shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertexShader);
     glAttachShader(shaderProgram, fragmentShader);
     glLinkProgram(shaderProgram);
+
+    // check linking errors
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+        fprintf(stderr, "ERROR: Shader program linking failed:\n%s\n", infoLog);
+        glDeleteShader(vertexShader);
+        glDeleteShader(fragmentShader);
+        free(vertexShaderSource);
+        free(fragmentShaderSource);
+        return 0;
+    }
+
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
@@ -57,6 +108,7 @@ GLuint createShaderProgram(const char* vertexPath, const char* fragmentPath) {
     free(vertexShaderSource);
     free(fragmentShaderSource);
 
+    printf("Successfully compiled shader program: %s + %s\n", vertexPath, fragmentPath);
     return shaderProgram;
 }
 
@@ -371,7 +423,10 @@ font_t initFont(const char* path, float size) {
     font_t f = {0};
 
     FILE* fp = fopen(path, "rb");
-    if (!fp) return f;
+    if (!fp) {
+        fprintf(stderr, "Failed to open font file: %s\n", path);
+        return f;
+    }
     fseek(fp, 0, SEEK_END);
     long len = ftell(fp);
     rewind(fp);
@@ -391,6 +446,12 @@ font_t initFont(const char* path, float size) {
     free(bmp);
 
     f.shader = createShaderProgram("shaders/text.vert", "shaders/text.frag");
+    if (f.shader == 0) {
+        fprintf(stderr, "Failed to create text shader program\n");
+        glDeleteTextures(1, &f.tex);
+        return f;
+    }
+
     f.verts = malloc(MAX_CHARS * 24 * sizeof(float));
 
     glGenVertexArrays(1, &f.vao);
@@ -401,6 +462,7 @@ font_t initFont(const char* path, float size) {
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
     glEnableVertexAttribArray(0);
 
+    printf("Successfully initialized font: %s\n", path);
     return f;
 }
 
