@@ -2,7 +2,7 @@
 arch=wasm
 build_type=Release
 compiler=emcc
-compiler.version=4.0
+compiler.version=3.0
 compiler.threads=posix
 os=Emscripten
 
