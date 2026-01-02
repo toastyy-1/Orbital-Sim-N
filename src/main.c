@@ -35,6 +35,8 @@
 
 // Global mutex definition
 pthread_mutex_t sim_vars_mutex;
+
+// Refactor / Improve this at some point
 #ifdef __EMSCRIPTEN__
 // Minimal render context and frame function for the browser main loop
 typedef struct {

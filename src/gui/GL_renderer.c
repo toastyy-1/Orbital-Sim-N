@@ -10,7 +10,73 @@
 #include "../globals.h"
 #include "../math/matrix.h"
 
+// Refactor / Improve this at some point
+#ifdef __EMSCRIPTEN__
+// Embedded WebGL2-compatible shader sources for the web build to avoid fopen on the virtual FS.
+// These mirror the files in /shaders but are written for GLSL ES 3.00 (WebGL2).
+static const char* EMSCRIPTEN_SIMPLE_VERT =
+    "#version 300 es\n"
+    "layout (location = 0) in vec3 aPos;\n"
+    "layout (location = 1) in vec3 aColor;\n"
+    "out vec3 vertexColor;\n"
+    "uniform mat4 model;\n"
+    "uniform mat4 view;\n"
+    "uniform mat4 projection;\n"
+    "void main() {\n"
+    "    gl_Position = projection * view * model * vec4(aPos, 1.0);\n"
+    "    vertexColor = aColor;\n"
+    "}\n";
+
+static const char* EMSCRIPTEN_SIMPLE_FRAG =
+    "#version 300 es\n"
+    "precision mediump float;\n"
+    "in vec3 vertexColor;\n"
+    "out vec4 FragColor;\n"
+    "void main() {\n"
+    "    FragColor = vec4(vertexColor, 1.0);\n"
+    "}\n";
+
+static const char* EMSCRIPTEN_TEXT_VERT =
+    "#version 300 es\n"
+    "layout (location = 0) in vec4 vertex;\n" // xy = pos, zw = texcoord
+    "out vec2 uv;\n"
+    "uniform mat4 proj;\n"
+    "void main() {\n"
+    "    gl_Position = proj * vec4(vertex.xy, 0.0, 1.0);\n"
+    "    uv = vertex.zw;\n"
+    "}\n";
+
+static const char* EMSCRIPTEN_TEXT_FRAG =
+    "#version 300 es\n"
+    "precision mediump float;\n"
+    "in vec2 uv;\n"
+    "out vec4 FragColor;\n"
+    "uniform sampler2D tex;\n"
+    "uniform vec3 color;\n"
+    "void main() {\n"
+    "    float a = texture(tex, uv).r;\n"
+    "    if (a < 0.5) discard;\n"
+    "    FragColor = vec4(color, 1.0);\n"
+    "}\n";
+
+static const char* duplicate_cstr(const char* s) {
+    if (!s) return NULL;
+    size_t n = strlen(s) + 1;
+    char* out = (char*)malloc(n);
+    if (out) memcpy(out, s, n);
+    return out;
+}
+#endif
+
 char* loadShaderSource(const char* filepath) {
+#ifdef __EMSCRIPTEN__
+    // In the Emscripten build, the shaders may not be available as files.
+    // Provide embedded sources for known shader paths.
+    if (strcmp(filepath, "shaders/simple.vert") == 0) return (char*)duplicate_cstr(EMSCRIPTEN_SIMPLE_VERT);
+    if (strcmp(filepath, "shaders/simple.frag") == 0) return (char*)duplicate_cstr(EMSCRIPTEN_SIMPLE_FRAG);
+    if (strcmp(filepath, "shaders/text.vert") == 0)   return (char*)duplicate_cstr(EMSCRIPTEN_TEXT_VERT);
+    if (strcmp(filepath, "shaders/text.frag") == 0)   return (char*)duplicate_cstr(EMSCRIPTEN_TEXT_FRAG);
+#endif
     FILE* file = fopen(filepath, "r");
     if (!file) {
         fprintf(stderr, "Failed to open shader file: %s\n", filepath);
@@ -34,6 +100,12 @@ GLuint createShaderProgram(const char* vertexPath, const char* fragmentPath) {
     // load shader sources from files
     char* vertexShaderSource = loadShaderSource(vertexPath);
     char* fragmentShaderSource = loadShaderSource(fragmentPath);
+    if (!vertexShaderSource || !fragmentShaderSource) {
+        // Avoid using an incomplete program; return 0 if loading failed.
+        if (vertexShaderSource) free(vertexShaderSource);
+        if (fragmentShaderSource) free(fragmentShaderSource);
+        return 0;
+    }
 
     // compile the vertex shader
     GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -371,7 +443,29 @@ font_t initFont(const char* path, float size) {
     font_t f = {0};
 
     FILE* fp = fopen(path, "rb");
-    if (!fp) return f;
+    if (!fp) {
+        // Graceful fallback: create an empty 1x1 texture and fully initialize buffers and shader
+        // so text functions become no-ops without crashing when the font file isn't available
+        unsigned char zero = 0;
+        glGenTextures(1, &f.tex);
+        glBindTexture(GL_TEXTURE_2D, f.tex);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, 1, 1, 0, GL_RED, GL_UNSIGNED_BYTE, &zero);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        f.shader = createShaderProgram("shaders/text.vert", "shaders/text.frag");
+        f.verts = malloc(MAX_CHARS * 24 * sizeof(float));
+        f.count = 0;
+
+        glGenVertexArrays(1, &f.vao);
+        glGenBuffers(1, &f.vbo);
+        glBindVertexArray(f.vao);
+        glBindBuffer(GL_ARRAY_BUFFER, f.vbo);
+        glBufferData(GL_ARRAY_BUFFER, MAX_CHARS * 24 * sizeof(float), NULL, GL_DYNAMIC_DRAW);
+        glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+        glEnableVertexAttribArray(0);
+        return f;
+    }
     fseek(fp, 0, SEEK_END);
     long len = ftell(fp);
     rewind(fp);
