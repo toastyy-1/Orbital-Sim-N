@@ -9,43 +9,40 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Compiler-specific flags
+# Force Release build type
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+endif()
+
+# Compiler-specific optimization flags
 if(CMAKE_C_COMPILER_ID MATCHES "Clang|GNU")
     add_compile_options(-Wall -Wextra)
-    if(CMAKE_BUILD_TYPE STREQUAL "Release")
-        # Aggressive optimization flags for maximum performance
-        add_compile_options(
-                -O3
-                -march=native
-                -mtune=native
-                -flto=auto
-                -funroll-loops
-                -mavx2 -mfma
-                -fno-math-errno -fno-trapping-math
-                -DNDEBUG
-        )
-        add_link_options(-flto=auto)    # Enable LTO during linking
+    # Aggressive optimization flags for maximum performance
+    add_compile_options(
+            -O3
+            -march=native
+            -mtune=native
+            -flto=auto
+            -funroll-loops
+            -mavx2 -mfma
+            -fno-math-errno -fno-trapping-math
+            -DNDEBUG
+    )
+    add_link_options(-flto=auto)    # Enable LTO during linking
 
-        # GCC-specific optimizations
-        if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
-            add_compile_options(-fno-stack-protector)  # Remove stack protection overhead
-        endif()
-    endif()
-    # For profiling: keep debug symbols and prevent aggressive inlining
-    if(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-        add_compile_options(-O1 -g -fno-inline)
+    # GCC-specific optimizations
+    if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
+        add_compile_options(-fno-stack-protector)  # Remove stack protection overhead
     endif()
 elseif(MSVC)
-    if(CMAKE_BUILD_TYPE STREQUAL "Release")
-        # MSVC optimization flags
-        add_compile_options(
-                /O2                    # Maximum optimization
-                /GL                    # Whole program optimization
-                /arch:AVX2             # Use AVX2 instructions if available
-                /fp:fast               # Fast floating-point model
-        )
-        add_link_options(/LTCG)    # Link-time code generation
-    endif()
+    # MSVC optimization flags
+    add_compile_options(
+            /O2                    # Maximum optimization
+            /GL                    # Whole program optimization
+            /arch:AVX2             # Use AVX2 instructions if available
+            /fp:fast               # Fast floating-point model
+    )
+    add_link_options(/LTCG)    # Link-time code generation
 endif()
 
 # macOS-specific: Add Homebrew paths for package discovery

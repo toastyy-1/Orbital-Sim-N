@@ -26,9 +26,9 @@ typedef struct {
     coord_t camera_pos;    // camera position in world space (defined by a unit vector, whereas the magnitude is changed by the viewport zoom)
     float zoom;             // zoom level
 
-    bool window_open;
+    volatile bool window_open;
     bool data_logging_enabled;
-    bool sim_running;
+    volatile bool sim_running;
     double sim_time;
     SDL_WindowID main_window_ID;
 
