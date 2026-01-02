@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
     ////////////////////////////////////////
     // initialize simulation thread
     pthread_t simThread;
-    pthread_mutex_init(&sim_vars_mutex, NULL);//
+    pthread_mutex_init(&sim_vars_mutex, NULL);
 
     // creates the sim thread
     if (pthread_create(&simThread, NULL, physicsSim, &sim) != 0) {
