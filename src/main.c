@@ -15,11 +15,16 @@
 #include <stdlib.h>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
+#ifndef __EMSCRIPTEN__
 #include <GL/glew.h>
+#endif
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
 #else
 #include <GL/gl.h>
+#endif
+#ifdef __EMSCRIPTEN__
+#include <emscripten/emscripten.h>
 #endif
 #include <stdbool.h>
 #include "gui/GL_renderer.h"
@@ -30,6 +35,61 @@
 
 // Global mutex definition
 pthread_mutex_t sim_vars_mutex;
+#ifdef __EMSCRIPTEN__
+// Minimal render context and frame function for the browser main loop
+typedef struct {
+    sim_properties_t* sim;
+    SDL_Window* window;
+    GLuint shaderProgram;
+    VBO_t sphere_buffer;
+    VBO_t cone_buffer;
+    VBO_t unit_cube_buffer; // currently unused but kept for parity
+    line_batch_t* line_batch;
+    font_t* font;
+    binary_filenames_t* filenames;
+} RenderContext;
+
+static RenderContext g_ctx;
+
+static void frame(void* arg) {
+    RenderContext* c = (RenderContext*)arg;
+    sim_properties_t* s = c->sim;
+    if (!s->wp.window_open) {
+        emscripten_cancel_main_loop();
+        return;
+    }
+
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    pthread_mutex_lock(&sim_vars_mutex);
+
+    SDL_Event event;
+    runEventCheck(&event, s);
+
+    glViewport(0, 0, (int)s->wp.window_size_x, (int)s->wp.window_size_y);
+    glUseProgram(c->shaderProgram);
+    castCamera(*s, c->shaderProgram);
+    renderCoordinatePlane(*s, c->line_batch);
+    renderPlanets(*s, c->shaderProgram, c->sphere_buffer);
+    renderCrafts(*s, c->shaderProgram, c->cone_buffer);
+    renderStats(*s, c->font);
+    renderVisuals(s, c->line_batch);
+    renderCMDWindow(s, c->font);
+    renderLines(c->line_batch, c->shaderProgram);
+    renderText(c->font, s->wp.window_size_x, s->wp.window_size_y, 1, 1, 1);
+
+    if (s->wp.data_logging_enabled) {
+        exportTelemetryBinary(*c->filenames, s);
+    }
+    if (s->wp.reset_sim) resetSim(s);
+
+    pthread_mutex_unlock(&sim_vars_mutex);
+
+    s->wp.frame_counter++;
+    SDL_GL_SwapWindow(c->window);
+}
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // PHYSICS SIMULATION THREAD
@@ -138,6 +198,7 @@ int main(int argc, char *argv[]) {
     ////////////////////////////////////////////////////////
     // simulation loop                                    //
     ////////////////////////////////////////////////////////
+#ifndef __EMSCRIPTEN__
     while (sim.wp.window_open) {
         // clears previous frame from the screen
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -205,6 +266,20 @@ int main(int argc, char *argv[]) {
         // present the renderer to the screen
         SDL_GL_SwapWindow(window);
     }
+#else
+    // On the web, use Emscripten's main loop to avoid blocking the browser UI thread
+    g_ctx.sim = &sim;
+    g_ctx.window = window;
+    g_ctx.shaderProgram = shaderProgram;
+    g_ctx.sphere_buffer = sphere_buffer;
+    g_ctx.cone_buffer = cone_buffer;
+    g_ctx.unit_cube_buffer = unit_cube_buffer;
+    g_ctx.line_batch = &line_batch;
+    g_ctx.font = &font;
+    g_ctx.filenames = &filenames;
+
+    emscripten_set_main_loop_arg(frame, &g_ctx, 0, 1);
+#endif
     ////////////////////////////////////////////////////////
     // end of simulation loop                             //
     ////////////////////////////////////////////////////////
