@@ -1,44 +1,48 @@
 #include <stdio.h>
 #include <math.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <pthread.h>
+
 #include "globals.h"
 #include "types.h"
 #include "sim/simulation.h"
 #include "gui/SDL_engine.h"
 #include "utility/json_loader.h"
 #include "utility/telemetry_export.h"
+#include "gui/GL_renderer.h"
+#include "math/matrix.h"
+#include "gui/models.h"
+
 #ifdef _WIN32
     #include <windows.h>
 #else
     #include <unistd.h>
 #endif
-#include <pthread.h>
-#include <stdlib.h>
+
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
-#ifndef __EMSCRIPTEN__
-#include <GL/glew.h>
-#endif
+
 #ifdef __APPLE__
-#include <OpenGL/gl.h>
+    #include <OpenGL/gl.h>
 #else
-#include <GL/gl.h>
+    #include <GL/gl.h>
 #endif
+
 #ifdef __EMSCRIPTEN__
-#include <emscripten/emscripten.h>
+    #include <emscripten/emscripten.h>
+    #include <GLES3/gl3.h>
+#else
+    #include <GL/glew.h>
 #endif
-#include <stdbool.h>
-#include "gui/GL_renderer.h"
-#include "math/matrix.h"
-#include "gui/models.h"
 
 // NOTE: ALL CALCULATIONS SHOULD BE DONE IN BASE SI UNITS
 
 // Global mutex definition
 pthread_mutex_t sim_vars_mutex;
 
-// Refactor / Improve this at some point
-#ifdef __EMSCRIPTEN__
-// Minimal render context and frame function for the browser main loop
+// Context structure to pass data to the main loop function
+// This unifies the requirements for both Native and WASM
 typedef struct {
     sim_properties_t* sim;
     SDL_Window* window;
@@ -49,49 +53,7 @@ typedef struct {
     line_batch_t* line_batch;
     font_t* font;
     binary_filenames_t* filenames;
-} RenderContext;
-
-static RenderContext g_ctx;
-
-static void frame(void* arg) {
-    RenderContext* c = (RenderContext*)arg;
-    sim_properties_t* s = c->sim;
-    if (!s->wp.window_open) {
-        emscripten_cancel_main_loop();
-        return;
-    }
-
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    pthread_mutex_lock(&sim_vars_mutex);
-
-    SDL_Event event;
-    runEventCheck(&event, s);
-
-    glViewport(0, 0, (int)s->wp.window_size_x, (int)s->wp.window_size_y);
-    glUseProgram(c->shaderProgram);
-    castCamera(*s, c->shaderProgram);
-    renderCoordinatePlane(*s, c->line_batch);
-    renderPlanets(*s, c->shaderProgram, c->sphere_buffer);
-    renderCrafts(*s, c->shaderProgram, c->cone_buffer);
-    renderStats(*s, c->font);
-    renderVisuals(s, c->line_batch);
-    renderCMDWindow(s, c->font);
-    renderLines(c->line_batch, c->shaderProgram);
-    renderText(c->font, s->wp.window_size_x, s->wp.window_size_y, 1, 1, 1);
-
-    if (s->wp.data_logging_enabled) {
-        exportTelemetryBinary(*c->filenames, s);
-    }
-    if (s->wp.reset_sim) resetSim(s);
-
-    pthread_mutex_unlock(&sim_vars_mutex);
-
-    s->wp.frame_counter++;
-    SDL_GL_SwapWindow(c->window);
-}
-#endif
+} AppContext;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // PHYSICS SIMULATION THREAD
@@ -111,6 +73,89 @@ void* physicsSim(void* args) {
         }
     }
     return NULL;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// UNIFIED MAIN LOOP STEP
+// This function runs exactly one frame of rendering and logic.
+////////////////////////////////////////////////////////////////////////////////////////////////////
+void main_loop_step(void* arg) {
+    AppContext* ctx = (AppContext*)arg;
+    sim_properties_t* s = ctx->sim;
+
+    // handle loop cancellation for Emscripten if window is closed
+    if (!s->wp.window_open) {
+        #ifdef __EMSCRIPTEN__
+        emscripten_cancel_main_loop();
+        #endif
+        return;
+    }
+
+    // clears previous frame from the screen
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // lock body_sim mutex for reading
+    pthread_mutex_lock(&sim_vars_mutex);
+
+    // user input event checking logic
+    SDL_Event event;
+    runEventCheck(&event, s);
+
+    ////////////////////////////////////////////////////////
+    // OPENGL RENDERER
+    ////////////////////////////////////////////////////////
+    // update viewport for window resizing
+    glViewport(0, 0, (int)s->wp.window_size_x, (int)s->wp.window_size_y);
+
+    // use shader program
+    glUseProgram(ctx->shaderProgram);
+
+    // casts the camera to the required orientation and zoom (always points to the origin)
+    castCamera(*s, ctx->shaderProgram);
+
+    // draw coordinate plane
+    renderCoordinatePlane(*s, ctx->line_batch);
+
+    // draw planets
+    renderPlanets(*s, ctx->shaderProgram, ctx->sphere_buffer);
+
+    // draw crafts
+    renderCrafts(*s, ctx->shaderProgram, ctx->cone_buffer);
+
+    // stats display
+    renderStats(*s, ctx->font);
+
+    // renders visuals things if they are enabled
+    renderVisuals(s, ctx->line_batch);
+
+    // command window display
+    renderCMDWindow(s, ctx->font);
+
+    // render all queued lines
+    renderLines(ctx->line_batch, ctx->shaderProgram);
+
+    // render all queued text
+    renderText(ctx->font, s->wp.window_size_x, s->wp.window_size_y, 1, 1, 1);
+    ////////////////////////////////////////////////////////
+    // END OPENGL RENDERER
+    ////////////////////////////////////////////////////////
+
+    if (s->wp.data_logging_enabled) {
+        exportTelemetryBinary(*ctx->filenames, s);
+    }
+
+    // check if sim needs to be reset
+    if (s->wp.reset_sim) resetSim(s);
+
+    // unlock sim vars mutex when done
+    pthread_mutex_unlock(&sim_vars_mutex);
+
+    // increment frame counter
+    s->wp.frame_counter++;
+
+    // present the renderer to the screen
+    SDL_GL_SwapWindow(ctx->window);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -154,9 +199,17 @@ int main(int argc, char *argv[]) {
 
     // create the shader programs
     GLuint shaderProgram = createShaderProgram("shaders/simple.vert", "shaders/simple.frag");
+    if (shaderProgram == 0) {
+        displayError("Shader Error", "Failed to create shader program. Check console for details.");
+        return 1;
+    }
 
     // enable depth testing
     glEnable(GL_DEPTH_TEST);
+
+    // enable blending for transparency
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     ////////////////////////////////////////
     // MESH/BUFFER SETUP                  //
@@ -198,97 +251,39 @@ int main(int argc, char *argv[]) {
     sim.wp.time_step = 0.01;
 
     ////////////////////////////////////////////////////////
-    // simulation loop                                    //
+    // PREPARE APP CONTEXT                                //
     ////////////////////////////////////////////////////////
-#ifndef __EMSCRIPTEN__
-    while (sim.wp.window_open) {
-        // clears previous frame from the screen
-        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    AppContext ctx = {
+        .sim = &sim,
+        .window = window,
+        .shaderProgram = shaderProgram,
+        .sphere_buffer = sphere_buffer,
+        .cone_buffer = cone_buffer,
+        .unit_cube_buffer = unit_cube_buffer,
+        .line_batch = &line_batch,
+        .font = &font,
+        .filenames = &filenames
+    };
 
-        // lock body_sim mutex for reading
-        pthread_mutex_lock(&sim_vars_mutex);
+    ////////////////////////////////////////////////////////
+    // SIMULATION LOOP                                    //
+    ////////////////////////////////////////////////////////
 
-        // user input event checking logic
-        SDL_Event event;
-        runEventCheck(&event, &sim);
-
-        ////////////////////////////////////////////////////////
-        // OPENGL RENDERER
-        ////////////////////////////////////////////////////////
-        // update viewport for window resizing
-        glViewport(0, 0, (int)sim.wp.window_size_x, (int)sim.wp.window_size_y);
-
-        // use shader program
-        glUseProgram(shaderProgram);
-
-        // casts the camera to the required orientation and zoom (always points to the origin)
-        castCamera(sim, shaderProgram);
-
-        // draw coordinate plane
-        renderCoordinatePlane(sim, &line_batch);
-
-        // draw planets
-        renderPlanets(sim, shaderProgram, sphere_buffer);
-
-        // draw crafts
-        renderCrafts(sim, shaderProgram, cone_buffer);
-
-        // stats display
-        renderStats(sim, &font);
-
-        // renders visuals things if they are enabled
-        renderVisuals(&sim, &line_batch);
-
-        // command window display
-        renderCMDWindow(&sim, &font);
-
-        // render all queued lines
-        renderLines(&line_batch, shaderProgram);
-
-        // render all queued text
-        renderText(&font, sim.wp.window_size_x, sim.wp.window_size_y, 1, 1, 1);
-        ////////////////////////////////////////////////////////
-        // END OPENGL RENDERER
-        ////////////////////////////////////////////////////////
-
-        if (sim.wp.data_logging_enabled) {
-            exportTelemetryBinary(filenames, &sim);
-        }
-
-        // check if sim needs to be reset
-        if (sim.wp.reset_sim) resetSim(&sim);
-
-        // unlock sim vars mutex when done
-        pthread_mutex_unlock(&sim_vars_mutex);
-
-        // increment frame counter
-        sim.wp.frame_counter++;
-
-        // present the renderer to the screen
-        SDL_GL_SwapWindow(window);
-    }
+#ifdef __EMSCRIPTEN__
+    // WebAssembly: Hand control to the browser's main loop
+    emscripten_set_main_loop_arg(main_loop_step, &ctx, 0, 1);
 #else
-    // On the web, use Emscripten's main loop to avoid blocking the browser UI thread
-    g_ctx.sim = &sim;
-    g_ctx.window = window;
-    g_ctx.shaderProgram = shaderProgram;
-    g_ctx.sphere_buffer = sphere_buffer;
-    g_ctx.cone_buffer = cone_buffer;
-    g_ctx.unit_cube_buffer = unit_cube_buffer;
-    g_ctx.line_batch = &line_batch;
-    g_ctx.font = &font;
-    g_ctx.filenames = &filenames;
-
-    emscripten_set_main_loop_arg(frame, &g_ctx, 0, 1);
+    // Native: Run standard while loop
+    while (sim.wp.window_open) {
+        main_loop_step(&ctx);
+    }
 #endif
-    ////////////////////////////////////////////////////////
-    // end of simulation loop                             //
-    ////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////
     // CLEAN UP                                       //
     ////////////////////////////////////////////////////
+    // Note: Emscripten usually does not reach here unless main loop is cancelled,
+    // but the OS/Browser reclaims memory anyway.
 
     // wait for simulation thread
     pthread_join(simThread, NULL);
