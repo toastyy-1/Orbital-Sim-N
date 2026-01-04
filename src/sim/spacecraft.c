@@ -20,7 +20,7 @@ void craft_checkBurnSchedule(const spacecraft_properties_t* sc, const int i, con
             sc->throttle[i] = sc->burn_properties[i][j].throttle;
 
             // calculate attitude based on burn type
-            quaternion_t final_attitude = {};
+            quaternion_t final_attitude = {0};
             const burn_properties_t* burn = &sc->burn_properties[i][j];
             const int target_id = burn->burn_target_id;
 

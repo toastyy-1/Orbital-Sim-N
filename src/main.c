@@ -1,15 +1,12 @@
 #include <stdio.h>
-#include <math.h>
 #include "globals.h"
 #include "types.h"
 #include "sim/simulation.h"
 #include "gui/SDL_engine.h"
-#include "utility/json_loader.h"
 #include "utility/telemetry_export.h"
 #ifdef _WIN32
     #include <windows.h>
 #else
-    #include <unistd.h>
 #endif
 #include <pthread.h>
 #include <stdlib.h>
@@ -23,7 +20,6 @@
 #endif
 #include <stdbool.h>
 #include "gui/GL_renderer.h"
-#include "math/matrix.h"
 #include "gui/models.h"
 
 // NOTE: ALL CALCULATIONS SHOULD BE DONE IN BASE SI UNITS

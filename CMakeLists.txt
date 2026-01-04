@@ -16,7 +16,7 @@ endif()
 
 # Compiler-specific optimization flags
 if(CMAKE_C_COMPILER_ID MATCHES "Clang|GNU")
-    add_compile_options(-Wall -Wextra)
+    add_compile_options(-Wall -Wextra -Wpedantic -Wno-unused-function)
     # Aggressive optimization flags for maximum performance
     add_compile_options(
             -O3
@@ -46,6 +46,8 @@ if(CMAKE_C_COMPILER_ID MATCHES "Clang|GNU")
 elseif(MSVC)
     # MSVC optimization flags
     add_compile_options(
+            /W4                    # High warning level
+            /permissive-           # Standards conformance mode (pedantic)
             /O2                    # Maximum optimization
             /GL                    # Whole program optimization
             /arch:AVX2             # Use AVX2 instructions if available

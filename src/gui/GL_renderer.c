@@ -6,7 +6,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <string.h>
 #include "../globals.h"
 #include "../math/matrix.h"
 
@@ -512,7 +511,7 @@ void renderText(font_t* font, float window_w, float window_h, float r, float g, 
     font->count = 0;
 }
 
-void freeFont(font_t* font) {
+void freeFont(const font_t* font) {
     free(font->verts);
     glDeleteTextures(1, &font->tex);
     glDeleteProgram(font->shader);

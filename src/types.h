@@ -6,7 +6,6 @@
 #include <SDL3/SDL.h>
 #include <GL/glew.h>
 
-#include "globals.h"
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
 #else
@@ -235,5 +234,12 @@ typedef struct {
     size_t vertex_count;
     size_t data_size;
 } sphere_mesh_t;
+
+// text rendering
+typedef struct {
+    GLuint tex, shader, vao, vbo;
+    float* verts;
+    int count;
+} font_t;
 
 #endif
