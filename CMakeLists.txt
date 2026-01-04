@@ -44,14 +44,17 @@ if(CMAKE_C_COMPILER_ID MATCHES "Clang|GNU")
         add_compile_options(-fno-stack-protector)  # Remove stack protection overhead
     endif()
 elseif(MSVC)
-    # MSVC optimization flags
+    # MSVC optimization flags (matched to Linux -O3 level)
     add_compile_options(
             /W4                    # High warning level
             /permissive-           # Standards conformance mode (pedantic)
-            /O2                    # Maximum optimization
+            /Ox                    # Maximum optimization (aggressive, similar to -O3)
+            /Ot                    # Favor fast code
+            /Oi                    # Generate intrinsic functions
             /GL                    # Whole program optimization
             /arch:AVX2             # Use AVX2 instructions if available
             /fp:fast               # Fast floating-point model
+            /GS-                   # Disable security checks for performance
     )
     add_link_options(/LTCG)    # Link-time code generation
 endif()
@@ -76,7 +79,7 @@ find_package(OpenGL REQUIRED)
 find_package(GLEW REQUIRED)
 
 if(WIN32)
-    find_package(PThreads4W REQUIRED)
+#
 else()
     set(THREADS_PREFER_PTHREAD_FLAG ON)
     find_package(Threads REQUIRED)
@@ -106,6 +109,7 @@ set(SOURCES
         src/gui/models.h
         src/gui/SDL_engine.c
         src/gui/stb_truetype.h
+        src/utility/sim_thread.h
 )
 
 # Create executable
@@ -126,10 +130,9 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 )
 
 if(WIN32)
-    target_link_libraries(${PROJECT_NAME} PRIVATE PThreads4W::PThreads4W)
+#
 else()
     target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads)
-    # CRITICAL FIX for Linux: Explicitly link the math library
     target_link_libraries(${PROJECT_NAME} PRIVATE m)
 endif()
 
