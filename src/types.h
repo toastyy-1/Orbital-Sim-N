@@ -6,7 +6,6 @@
 #include <SDL3/SDL.h>
 #include <GL/glew.h>
 
-#include "globals.h"
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
 #else
@@ -15,7 +14,19 @@
 
 typedef struct {
     float x, y, z;
-} coord_t;
+} vec3_f;
+
+typedef struct {
+    double x, y, z;
+} vec3;
+
+typedef struct {
+    float m[16]; // 4x4 matrix
+} mat4;
+
+typedef struct {
+    double w, x, y, z;
+} quaternion_t;
 
 typedef struct {
     int screen_width, screen_height;
@@ -23,12 +34,12 @@ typedef struct {
     float window_size_x, window_size_y;
 
     // 3D camera
-    coord_t camera_pos;    // camera position in world space (defined by a unit vector, whereas the magnitude is changed by the viewport zoom)
+    vec3_f camera_pos;    // camera position in world space (defined by a unit vector, whereas the magnitude is changed by the viewport zoom)
     float zoom;             // zoom level
 
-    bool window_open;
+    volatile bool window_open;
     bool data_logging_enabled;
-    bool sim_running;
+    volatile bool sim_running;
     double sim_time;
     SDL_WindowID main_window_ID;
 
@@ -86,7 +97,7 @@ typedef struct {
     double* force_z;
     double* kinetic_energy;
 
-    coord_t** path_cache; // array of pointers, one per body, each pointing to PATH_CACHE_LENGTH coords
+    vec3_f** path_cache; // array of pointers, one per body, each pointing to PATH_CACHE_LENGTH coords
 } body_properties_t;
 
 typedef struct {
@@ -116,7 +127,7 @@ typedef struct {
     double* pos_x;
     double* pos_y;
     double* pos_z;
-    double* attitude;
+    quaternion_t* attitude;
 
     double* vel_x;
     double* vel_y;
@@ -219,13 +230,16 @@ typedef struct {
 } line_batch_t;
 
 typedef struct {
-    float m[16]; // 4x4 matrix
-} mat4;
-
-typedef struct {
     float* vertices;
     size_t vertex_count;
     size_t data_size;
 } sphere_mesh_t;
+
+// text rendering
+typedef struct {
+    GLuint tex, shader, vao, vbo;
+    float* verts;
+    int count;
+} font_t;
 
 #endif

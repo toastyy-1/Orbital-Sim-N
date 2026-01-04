@@ -9,7 +9,25 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Force Release build type
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+endif()
+
+# Find required packages
+# Note: On Linux, ensure these are installed via package manager or built from source
 # --- 1. FIND PACKAGES ---
+if(APPLE)
+    # Try common Homebrew installation paths
+    if(EXISTS "/opt/homebrew")
+        # Apple Silicon Macs
+        list(APPEND CMAKE_PREFIX_PATH "/opt/homebrew")
+    elseif(EXISTS "/usr/local")
+        # Intel Macs
+        list(APPEND CMAKE_PREFIX_PATH "/usr/local")
+    endif()
+endif()
+
 find_package(SDL3 CONFIG REQUIRED)
 find_package(cJSON CONFIG REQUIRED)
 
@@ -56,9 +74,9 @@ set(SOURCES
 add_executable(${PROJECT_NAME} ${SOURCES})
 
 # Windows-specific: hide console window
-if(WIN32)
-    set_target_properties(${PROJECT_NAME} PROPERTIES WIN32_EXECUTABLE TRUE)
-endif()
+#if(WIN32)
+#    set_target_properties(${PROJECT_NAME} PROPERTIES WIN32_EXECUTABLE TRUE)
+#endif()
 
 # --- 4. COMPILER FLAGS & OPTIMIZATIONS ---
 if(EMSCRIPTEN)
@@ -76,42 +94,44 @@ if(EMSCRIPTEN)
     set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".html")
 
 elseif(CMAKE_C_COMPILER_ID MATCHES "Clang|GNU")
-    # --- DESKTOP (GCC/CLANG) FLAGS ---
-    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra)
+    add_compile_options(-Wall -Wextra -Wpedantic -Wno-unused-function)
+    # Aggressive optimization flags for maximum performance
+    add_compile_options(
+            -O3
+            -march=native
+            -mtune=native
+            -flto=auto
+            -funroll-loops
+            -fno-math-errno -fno-trapping-math
+            -DNDEBUG
+    )
 
-    if(CMAKE_BUILD_TYPE STREQUAL "Release")
-        target_compile_options(${PROJECT_NAME} PRIVATE
-                -O3
-                -march=native
-                -mtune=native
-                -flto=auto
-                -funroll-loops
-                -mavx2 -mfma
-                -fno-math-errno -fno-trapping-math
-                -DNDEBUG
-        )
-        target_link_options(${PROJECT_NAME} PRIVATE -flto=auto)
-
-        if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
-            target_compile_options(${PROJECT_NAME} PRIVATE -fno-stack-protector)
-        endif()
+    # Architecture-specific SIMD optimizations
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|i686")
+        # x86/x64: Use AVX2 and FMA instructions
+        add_compile_options(-mavx2 -mfma)
+    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm|aarch64|ARM64")
+        # ARM: Use NEON instructions (enabled by -march=native on ARM)
+        # No additional flags needed as -march=native handles this
     endif()
 
-    if(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-        target_compile_options(${PROJECT_NAME} PRIVATE -O1 -g -fno-inline)
-    endif()
+    add_link_options(-flto=auto)    # Enable LTO during linking
 
+    # GCC-specific optimizations
+    if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
+        add_compile_options(-fno-stack-protector)  # Remove stack protection overhead
+    endif()
 elseif(MSVC)
-    # --- WINDOWS (MSVC) FLAGS ---
-    if(CMAKE_BUILD_TYPE STREQUAL "Release")
-        target_compile_options(${PROJECT_NAME} PRIVATE
-                /O2
-                /GL
-                /arch:AVX2
-                /fp:fast
-        )
-        target_link_options(${PROJECT_NAME} PRIVATE /LTCG)
-    endif()
+    # MSVC optimization flags
+    add_compile_options(
+            /W4                    # High warning level
+            /permissive-           # Standards conformance mode (pedantic)
+            /O2                    # Maximum optimization
+            /GL                    # Whole program optimization
+            /arch:AVX2             # Use AVX2 instructions if available
+            /fp:fast               # Fast floating-point model
+    )
+    add_link_options(/LTCG)    # Link-time code generation
 endif()
 
 # --- 5. INCLUDE PATHS (macOS) ---
@@ -141,7 +161,9 @@ if(NOT EMSCRIPTEN)
     if(WIN32)
         target_link_libraries(${PROJECT_NAME} PRIVATE PThreads4W::PThreads4W)
     else()
-        target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads m)
+        target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads)
+        # CRITICAL FIX for Linux: Explicitly link the math library
+        target_link_libraries(${PROJECT_NAME} PRIVATE m)
     endif()
 endif()
 
@@ -167,6 +189,7 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMENT "Copying assets"
 )
 
+# Windows: Copy SDL3 DLLs automatically
 if(WIN32)
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different

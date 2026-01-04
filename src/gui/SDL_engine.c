@@ -3,8 +3,6 @@
 #include <stdlib.h>
 
 #include "../gui/GL_renderer.h"
-#include "../globals.h"
-#include "../sim/bodies.h"
 #include <SDL3/SDL.h>
 #include <GL/glew.h>
 
@@ -22,7 +20,7 @@ void displayError(const char* title, const char* message) {
     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, title, message, NULL);
 }
 // initialize the window parameters
-window_params_t init_window_params() {
+window_params_t init_window_params(void) {
     window_params_t wp = {0};
 
     // gets screen width and height parameters from computer
@@ -107,15 +105,15 @@ SDL_GL_init_t init_SDL_OPENGL_window(const char* title, int width, int height, U
     glewExperimental = GL_TRUE;
     GLenum glewError = glewInit();
     if (glewError != GLEW_OK) {
-        fprintf(stderr, "Error initializing GLEW: %s\n", glewGetErrorString(glewError));
+        fprintf(stderr, "Error initializing GLEW: %s\n", (const char*)glewGetErrorString(glewError));
         return result;
     }
 
     // enable VSync
     SDL_GL_SetSwapInterval(1);
 
-    printf("OpenGL version: %s\n", glGetString(GL_VERSION)); // yes this might show a warning, it's supposed to be like this
-    printf("GLEW version: %s\n", glewGetString(GLEW_VERSION));
+    printf("OpenGL version: %s\n", (const char*)glGetString(GL_VERSION));
+    printf("GLEW version: %s\n", (const char*)glewGetString(GLEW_VERSION));
 
     // enable text input
     SDL_StartTextInput(result.window);
@@ -146,8 +144,8 @@ static void handleMouseMotionEvent(const SDL_Event* event, sim_properties_t* sim
         float rotation_sensitivity = 0.01f;
         float rotation_angle = delta_x * rotation_sensitivity;
 
-        // rotate camera position around Y axis
-        mat4 rotation = mat4_rotationY(rotation_angle);
+        // rotate camera position around Z axis
+        mat4 rotation = mat4_rotationZ(rotation_angle);
         wp->camera_pos = mat4_transformPoint(rotation, wp->camera_pos);
 
         // update last mouse position for next frame
@@ -252,7 +250,7 @@ static void parseRunCommands(char* cmd, sim_properties_t* sim) {
 // handles keyboard events
 static void handleKeyboardEvent(const SDL_Event* event, sim_properties_t* sim) {
     console_t* console = &sim->console;
-    window_params_t* wp = &sim->wp;
+    //window_params_t* wp = &sim->wp;
 
     if (event->key.key == SDLK_BACKSPACE && console->cmd_text_box_length > 0) {
         console->cmd_text_box_length -= 1;

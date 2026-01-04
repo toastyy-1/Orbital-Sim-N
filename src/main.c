@@ -8,7 +8,6 @@
 #include "types.h"
 #include "sim/simulation.h"
 #include "gui/SDL_engine.h"
-#include "utility/json_loader.h"
 #include "utility/telemetry_export.h"
 #include "gui/GL_renderer.h"
 #include "math/matrix.h"
@@ -16,8 +15,6 @@
 
 #ifdef _WIN32
     #include <windows.h>
-#else
-    #include <unistd.h>
 #endif
 
 #include <SDL3/SDL.h>
@@ -231,6 +228,10 @@ int main(int argc, char *argv[]) {
 
     // initialize font for text rendering
     font_t font = initFont("assets/font.ttf", 24.0f);
+    if (font.shader == 0) {
+        displayError("Font Error", "Failed to initialize font. Check console for details.");
+        return 1;
+    }
 
     ////////////////////////////////////////
     // SIM THREAD INIT                    //
@@ -241,7 +242,7 @@ int main(int argc, char *argv[]) {
 
     // creates the sim thread
     if (pthread_create(&simThread, NULL, physicsSim, &sim) != 0) {
-        displayError("ERROR", "Error when creating physics simulation process");
+        displayError("ERROR", "Error when creating simulation process thread");
         sim.wp.sim_running = false;
         sim.wp.window_open = false;
         return 1;
