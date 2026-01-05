@@ -248,8 +248,6 @@ int main(int argc, char *argv[]) {
     ////////////////////////////////////////////////////
     // CLEAN UP                                       //
     ////////////////////////////////////////////////////
-    // Note: Emscripten usually does not reach here unless main loop is cancelled,
-    // but the OS/Browser reclaims memory anyway.
 
     // wait for simulation thread
 #ifdef _WIN32
