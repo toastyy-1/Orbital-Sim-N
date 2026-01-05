@@ -85,6 +85,7 @@ if(EMSCRIPTEN)
             "-sFULL_ES3=1"
             "-sUSE_PTHREADS=1"
             "-sASYNCIFY=1"
+            "-sEXPORTED_RUNTIME_METHODS=['FS']"
             "-pthread"
 
             # Mappings for virtual filesystem
@@ -92,8 +93,6 @@ if(EMSCRIPTEN)
             "SHELL:--preload-file ${CMAKE_SOURCE_DIR}/shaders/web@/shaders"
             "SHELL:--preload-file ${CMAKE_SOURCE_DIR}/data@/"
     )
-
-    set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".html")
 
 elseif(CMAKE_C_COMPILER_ID MATCHES "Clang|GNU")
     add_compile_options(-Wall -Wextra -Wpedantic -Wno-unused-function)
@@ -201,5 +200,15 @@ if(WIN32)
             $<TARGET_FILE:SDL3::SDL3>
             $<TARGET_FILE_DIR:${PROJECT_NAME}>
             COMMENT "Copying SDL3 DLLs"
+    )
+endif()
+
+# WASM: Copy index.html to build directory
+if(EMSCRIPTEN)
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy
+            "${CMAKE_SOURCE_DIR}/web/index.html"
+            "$<TARGET_FILE_DIR:${PROJECT_NAME}>/index.html"
+            COMMENT "Copying index.html to build directory"
     )
 endif()
