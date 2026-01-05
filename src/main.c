@@ -1,11 +1,9 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdbool.h>
-#include <stdlib.h>
 
 #include "globals.h"
 #include "types.h"
-#include "math/matrix.h"
 #include "sim/simulation.h"
 #include "gui/SDL_engine.h"
 #include "gui/GL_renderer.h"
