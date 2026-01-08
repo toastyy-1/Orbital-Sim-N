@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
     };
 
 #ifdef __linux__
-    // force X11 on Linux (fixes text input issues on wayland)
+    // force X11 on Linux (fixes SDL text input issues on wayland)
     SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "x11");
 #endif
 
@@ -137,7 +137,7 @@ int main(int argc, char *argv[]) {
     sim.wp.planet_model_vertex_count = (int)sphere_mesh.vertex_count; // I couldn't think of a better way to do this ngl
 
     // create batch to hold all the line geometries we would ever want to draw!
-    line_batch_t line_batch = createLineBatch(1000);
+    line_batch_t line_batch = createLineBatch(PATH_CAPACITY * MAX_PLANETS + 100);
 
     // planet path tracking
     planet_paths_t planet_paths = {0};
@@ -190,13 +190,13 @@ int main(int argc, char *argv[]) {
             free(planet_paths.positions);
             free(planet_paths.counts);
             planet_paths.num_planets = sim_copy.gb.count;
-            planet_paths.capacity = 1000;
+            planet_paths.capacity = PATH_CAPACITY;
             planet_paths.positions = malloc(planet_paths.num_planets * planet_paths.capacity * sizeof(vec3));
             planet_paths.counts = calloc(planet_paths.num_planets, sizeof(int));
         }
 
         // record planet paths
-        if (sim.wp.frame_counter % 10 == 0 && sim_copy.gb.count > 0) {
+        if (sim.wp.frame_counter % 1 == 0 && sim_copy.gb.count > 0) {
             for (int p = 0; p < sim_copy.gb.count; p++) {
                 int idx = p * planet_paths.capacity + planet_paths.counts[p];
                 if (planet_paths.counts[p] < planet_paths.capacity) {
