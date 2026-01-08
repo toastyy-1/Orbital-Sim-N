@@ -1,40 +1,27 @@
 #!/usr/bin/env python3
 """
 Simple local server for the Emscripten build that:
-- Serves the build output directory containing OrbitSimulation.html
+- Serves the build output directory containing index.html
 - Adds the required cross-origin isolation headers so pthreads work:
   - Cross-Origin-Opener-Policy: same-origin
   - Cross-Origin-Embedder-Policy: require-corp
-- Opens the default browser to OrbitSimulation.html on startup
+- Opens the default browser to index.html on startup
 
 Usage examples:
   python serve_web.py                    # auto-detects build dir and serves on 127.0.0.1:8000
   python serve_web.py --port 8080        # choose a port
-  python serve_web.py --root build/Release  # specify directory that contains OrbitSimulation.html
 
 Note: This is intended for local development/testing.
 """
 
-import argparse
-import contextlib
-import os
-import socket
-import sys
-import threading
-import time
-import webbrowser
+import argparse, contextlib, os, socket, sys, threading, time, webbrowser, mimetypes
 from functools import partial
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
-import mimetypes
 
-
-DEFAULT_HTML = "OrbitSimulation.html"
-
+DEFAULT_HTML = "index.html"
 
 def guess_root(candidates=None):
-    """Try to find a directory that contains OrbitSimulation.html.
-    Returns absolute path or None.
-    """
+    # Try to find a directory that contains index.html.
     if candidates is None:
         candidates = [
             ".",
@@ -54,10 +41,7 @@ def guess_root(candidates=None):
             return candidate
     return None
 
-
 class COOPCOEPRequestHandler(SimpleHTTPRequestHandler):
-    """HTTP handler that injects COOP/COEP headers and sets correct MIME types."""
-
     # Add headers required by Emscripten pthreads
     def end_headers(self):
         self.send_header("Cross-Origin-Opener-Policy", "same-origin")
@@ -70,7 +54,6 @@ class COOPCOEPRequestHandler(SimpleHTTPRequestHandler):
         self.send_header("Expires", "0")
         super().end_headers()
 
-    # Optional nicety: redirect "/" to the app HTML
     def do_GET(self):
         if self.path in ("/", ""):
             self.send_response(302)
@@ -79,13 +62,11 @@ class COOPCOEPRequestHandler(SimpleHTTPRequestHandler):
             return
         return super().do_GET()
 
-
 def ensure_mime_types():
     # Ensure correct .wasm MIME type
     mimetypes.add_type("application/wasm", ".wasm", strict=True)
     # Common source maps
     mimetypes.add_type("application/json", ".map", strict=False)
-
 
 def wait_for_port(host: str, port: int, timeout: float = 3.0) -> bool:
     """Wait briefly until the server socket is ready."""
@@ -101,17 +82,14 @@ def wait_for_port(host: str, port: int, timeout: float = 3.0) -> bool:
         time.sleep(0.05)
     return False
 
-
 def main(argv=None):
-    parser = argparse.ArgumentParser(description="Serve OrbitSimulation.html with COOP/COEP headers")
+    parser = argparse.ArgumentParser(description="Serve index.html with COOP/COEP headers")
     parser.add_argument("--host", default="127.0.0.1", help="Interface to bind (default: 127.0.0.1)")
     parser.add_argument("--port", type=int, default=8000, help="Port to bind (default: 8000)")
-    parser.add_argument("--root", default=None, help="Directory containing OrbitSimulation.html")
-    parser.add_argument("--no-open", action="store_true", help="Do not open a browser automatically")
     args = parser.parse_args(argv)
 
     # Resolve root directory
-    root = args.root or guess_root()
+    root = guess_root()
     if not root:
         print(f"[serve_web] Could not find {DEFAULT_HTML}. Specify --root pointing to your build output.", file=sys.stderr)
         return 2
@@ -137,13 +115,12 @@ def main(argv=None):
     t.start()
 
     opened = False
-    if not args.no_open:
-        if wait_for_port(args.host, args.port, timeout=3.0):
-            try:
-                webbrowser.open(url)
-                opened = True
-            except Exception:
-                opened = False
+    if wait_for_port(args.host, args.port, timeout=3.0):
+        try:
+            webbrowser.open(url)
+            opened = True
+        except Exception:
+            opened = False
 
     if not opened and not args.no_open:
         print("[serve_web] Could not auto-open browser. Open the URL above manually.")
@@ -159,7 +136,6 @@ def main(argv=None):
             server.shutdown()
             server.server_close()
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())
