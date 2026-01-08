@@ -638,33 +638,10 @@ void renderStats(sim_properties_t sim, font_t* font) {
     }
 }
 
-// renders debug features when they are enabled
-void renderVisuals(sim_properties_t* sim, line_batch_t* line_batch, planet_paths_t* planet_paths) {
-    if (sim->wp.draw_lines_between_bodies) {
-        // draw lines between planets to show distance
-        for (int i = 0; i < sim->gb.count; i++) {
-            // planet pos 1
-            vec3_f pp1 = { (float)sim->gb.pos_x[i] / SCALE, (float)sim->gb.pos_y[i] / SCALE, (float)sim->gb.pos_z[i] / SCALE };
-            int pp2idx = i + 1;
-            if (i + 1 > sim->gb.count - 1) pp2idx = 0;
-            // planet pos 2
-            vec3_f pp2 = { (float)sim->gb.pos_x[pp2idx] / SCALE, (float)sim->gb.pos_y[pp2idx] / SCALE, (float)sim->gb.pos_z[pp2idx] / SCALE };
-            addLine(line_batch, pp1.x, pp1.y, pp1.z, pp2.x, pp2.y, pp2.z, 1, 1, 1);
-        }
-    }
-    if (sim->wp.draw_inclination_height) {
-        for (int i = 0; i < sim->gb.count; i++) {
-            // planet world pos and its 2d world coordinate (bottom_pos)
-            vec3_f pp = { (float)sim->gb.pos_x[i] / SCALE, (float)sim->gb.pos_y[i] / SCALE, (float)sim->gb.pos_z[i] / SCALE };
-            float r, g, b;
-            if (pp.z > 0) { r = 0.5f, g = 0.5f; b = 1.0f; }
-            else { r = 1.0f, g = 0.5f; b = 0.5f; }
-            addLine(line_batch, pp.x, pp.y, pp.z, pp.x, pp.y, 0, r, g, b);
-        }
-    }
-    if (sim->wp.draw_planet_path && planet_paths->num_planets > 0) {
+void renderPlanetPaths(sim_properties_t* sim, line_batch_t* line_batch, object_path_storage_t* planet_paths) {
+    if (sim->wp.draw_planet_path && planet_paths->num_objects > 0) {
         // draw orbital paths for all planets
-        for (int p = 0; p < planet_paths->num_planets; p++) {
+        for (int p = 0; p < planet_paths->num_objects; p++) {
             int base = p * planet_paths->capacity;
             for (int i = 1; i < planet_paths->counts[p]; i++) {
                 vec3 p1 = planet_paths->positions[base + i - 1];
@@ -677,13 +654,13 @@ void renderVisuals(sim_properties_t* sim, line_batch_t* line_batch, planet_paths
     }
 
     // initialize or resize planet paths if needed
-    if (sim->gb.count > 0 && planet_paths->num_planets != sim->gb.count) {
+    if (sim->gb.count > 0 && planet_paths->num_objects != sim->gb.count) {
         free(planet_paths->positions);
         free(planet_paths->counts);
-        planet_paths->num_planets = sim->gb.count;
+        planet_paths->num_objects = sim->gb.count;
         planet_paths->capacity = PATH_CAPACITY;
-        planet_paths->positions = malloc(planet_paths->num_planets * planet_paths->capacity * sizeof(vec3));
-        planet_paths->counts = calloc(planet_paths->num_planets, sizeof(int));
+        planet_paths->positions = malloc(planet_paths->num_objects * planet_paths->capacity * sizeof(vec3));
+        planet_paths->counts = calloc(planet_paths->num_objects, sizeof(int));
     }
 
     // record planet paths
@@ -707,4 +684,81 @@ void renderVisuals(sim_properties_t* sim, line_batch_t* line_batch, planet_paths
             }
         }
     }
+}
+
+void renderCraftPaths(sim_properties_t* sim, line_batch_t* line_batch, object_path_storage_t* craft_paths) {
+    if (sim->wp.draw_craft_path && craft_paths->num_objects > 0) {
+        // draw orbital paths for all planets
+        for (int p = 0; p < craft_paths->num_objects; p++) {
+            int base = p * craft_paths->capacity;
+            for (int i = 1; i < craft_paths->counts[p]; i++) {
+                vec3 p1 = craft_paths->positions[base + i - 1];
+                vec3 p2 = craft_paths->positions[base + i];
+                // convert from double to float only at render time
+                addLine(line_batch, (float)p1.x, (float)p1.y, (float)p1.z,
+                                    (float)p2.x, (float)p2.y, (float)p2.z, 1.0f, 1.0f, 0.5f);
+            }
+        }
+    }
+
+    // initialize or resize planet paths if needed
+    if (sim->gs.count > 0 && craft_paths->num_objects != sim->gs.count) {
+        free(craft_paths->positions);
+        free(craft_paths->counts);
+        craft_paths->num_objects = sim->gs.count;
+        craft_paths->capacity = PATH_CAPACITY;
+        craft_paths->positions = malloc(craft_paths->num_objects * craft_paths->capacity * sizeof(vec3));
+        craft_paths->counts = calloc(craft_paths->num_objects, sizeof(int));
+    }
+
+    // record planet paths
+    if (sim->gs.count > 0) {
+        for (int p = 0; p < sim->gs.count; p++) {
+            int idx = p * craft_paths->capacity + craft_paths->counts[p];
+            if (craft_paths->counts[p] < craft_paths->capacity) {
+                // add new point
+                craft_paths->positions[idx].x = sim->gs.pos_x[p] / SCALE;
+                craft_paths->positions[idx].y = sim->gs.pos_y[p] / SCALE;
+                craft_paths->positions[idx].z = sim->gs.pos_z[p] / SCALE;
+                craft_paths->counts[p]++;
+            } else {
+                int base = p * craft_paths->capacity;
+                for (int i = 1; i < craft_paths->capacity; i++) {
+                    craft_paths->positions[base + i - 1] = craft_paths->positions[base + i];
+                }
+                craft_paths->positions[base + craft_paths->capacity - 1].x = sim->gs.pos_x[p] / SCALE;
+                craft_paths->positions[base + craft_paths->capacity - 1].y = sim->gs.pos_y[p] / SCALE;
+                craft_paths->positions[base + craft_paths->capacity - 1].z = sim->gs.pos_z[p] / SCALE;
+            }
+        }
+    }
+}
+
+// renders debug features when they are enabled
+void renderVisuals(sim_properties_t* sim, line_batch_t* line_batch, object_path_storage_t* planet_paths, object_path_storage_t* craft_paths) {
+    if (sim->wp.draw_lines_between_bodies) {
+        // draw lines between planets to show distance
+        for (int i = 0; i < sim->gb.count; i++) {
+            // planet pos 1
+            vec3_f pp1 = { (float)sim->gb.pos_x[i] / SCALE, (float)sim->gb.pos_y[i] / SCALE, (float)sim->gb.pos_z[i] / SCALE };
+            int pp2idx = i + 1;
+            if (i + 1 > sim->gb.count - 1) pp2idx = 0;
+            // planet pos 2
+            vec3_f pp2 = { (float)sim->gb.pos_x[pp2idx] / SCALE, (float)sim->gb.pos_y[pp2idx] / SCALE, (float)sim->gb.pos_z[pp2idx] / SCALE };
+            addLine(line_batch, pp1.x, pp1.y, pp1.z, pp2.x, pp2.y, pp2.z, 1, 1, 1);
+        }
+    }
+    if (sim->wp.draw_inclination_height) {
+        for (int i = 0; i < sim->gb.count; i++) {
+            // planet world pos and its 2d world coordinate (bottom_pos)
+            vec3_f pp = { (float)sim->gb.pos_x[i] / SCALE, (float)sim->gb.pos_y[i] / SCALE, (float)sim->gb.pos_z[i] / SCALE };
+            float r, g, b;
+            if (pp.z > 0) { r = 0.5f, g = 0.5f; b = 1.0f; }
+            else { r = 1.0f, g = 0.5f; b = 0.5f; }
+            addLine(line_batch, pp.x, pp.y, pp.z, pp.x, pp.y, 0, r, g, b);
+        }
+    }
+
+    renderCraftPaths(sim, line_batch, craft_paths);
+    renderPlanetPaths(sim, line_batch, planet_paths);
 }

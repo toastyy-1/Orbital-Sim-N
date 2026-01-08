@@ -162,11 +162,9 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 )
 
 if(NOT EMSCRIPTEN)
-    if(WIN32)
-        target_link_libraries(${PROJECT_NAME} PRIVATE PThreads4W::PThreads4W)
-    else()
-        target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads)
-        # CRITICAL FIX for Linux: Explicitly link the math library
+    target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads)
+    # Link math library on Unix-like systems (not needed on Windows)
+    if(UNIX)
         target_link_libraries(${PROJECT_NAME} PRIVATE m)
     endif()
 endif()

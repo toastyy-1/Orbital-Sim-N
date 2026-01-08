@@ -60,6 +60,7 @@ typedef struct {
     bool draw_lines_between_bodies;
     bool draw_inclination_height;
     bool draw_planet_path;
+    bool draw_craft_path;
 
 } window_params_t;
 
@@ -244,7 +245,7 @@ typedef struct {
     vec3* positions;
     int* counts;
     int capacity;
-    int num_planets;
-} planet_paths_t;
+    int num_objects;
+} object_path_storage_t;
 
 #endif

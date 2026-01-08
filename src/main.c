@@ -140,7 +140,8 @@ int main(int argc, char *argv[]) {
     line_batch_t line_batch = createLineBatch(PATH_CAPACITY * MAX_PLANETS + 100);
 
     // planet path tracking
-    planet_paths_t planet_paths = {0};
+    object_path_storage_t planet_paths = {0};
+    object_path_storage_t craft_paths = {0};
 
     // initialize font for text rendering
     font_t font = initFont("assets/font.ttf", 24.0f);
@@ -210,7 +211,7 @@ int main(int argc, char *argv[]) {
         renderStats(sim_copy, &font);
 
         // renders visuals things if they are enabled
-        renderVisuals(&sim_copy, &line_batch, &planet_paths);
+        renderVisuals(&sim_copy, &line_batch, &planet_paths, &craft_paths);
 
         // command window display
         renderCMDWindow(&sim_copy, &font);
@@ -241,9 +242,12 @@ int main(int argc, char *argv[]) {
 
             mutex_unlock(&sim_mutex);
 
-            // reset planet paths
-            for (int i = 0; i < planet_paths.num_planets; i++) {
+            // reset paths
+            for (int i = 0; i < planet_paths.num_objects; i++) {
                 planet_paths.counts[i] = 0;
+            }
+            for (int i = 0; i < craft_paths.num_objects; i++) {
+                craft_paths.counts[i] = 0;
             }
         }
 
