@@ -226,11 +226,8 @@ void castCamera(const sim_properties_t sim, const GLuint shaderProgram) {
 // sphere mesh generation
 sphere_mesh_t generateUnitSphere(unsigned int stacks, unsigned int sectors) {
     sphere_mesh_t sphere = {0};
-
-    // each quad (stack-sector intersection) creates 2 triangles = 6 vertices
-    // total quads = stacks * sectors
     sphere.vertex_count = stacks * sectors * 6;
-    sphere.data_size = sphere.vertex_count * 6 * sizeof(float); // 6 floats per vertex (pos + normal)
+    sphere.data_size = sphere.vertex_count * 6 * sizeof(float);
 
     sphere.vertices = (float*)malloc(sphere.data_size);
     if (!sphere.vertices) {
@@ -248,47 +245,28 @@ sphere_mesh_t generateUnitSphere(unsigned int stacks, unsigned int sectors) {
         for (unsigned int j = 0; j < sectors; ++j) {
             float phi1 = (float)j * 2.0f * M_PI_f / (float)sectors;
             float phi2 = (float)(j + 1) * 2.0f * M_PI_f / (float)sectors;
-
-            // calculate 4 vertices of the quad (using Z as up)
-            // v1 (top-left)
             float v1_x = cosf(phi1) * sinf(theta1);
             float v1_y = sinf(phi1) * sinf(theta1);
             float v1_z = cosf(theta1);
-
-            // v2 (bottom-left)
             float v2_x = cosf(phi1) * sinf(theta2);
             float v2_y = sinf(phi1) * sinf(theta2);
             float v2_z = cosf(theta2);
-
-            // v3 (bottom-right)
             float v3_x = cosf(phi2) * sinf(theta2);
             float v3_y = sinf(phi2) * sinf(theta2);
             float v3_z = cosf(theta2);
-
-            // v4 (top-right)
             float v4_x = cosf(phi2) * sinf(theta1);
             float v4_y = sinf(phi2) * sinf(theta1);
             float v4_z = cosf(theta1);
-
-            // first triangle (v1, v2, v3)
-            // v1
-            *data++ = v1_x; *data++ = v1_y; *data++ = v1_z; // position
-            *data++ = v1_x; *data++ = v1_y; *data++ = v1_z; // normal (same as position for unit sphere)
-            // v2
-            *data++ = v2_x; *data++ = v2_y; *data++ = v2_z;
-            *data++ = v2_x; *data++ = v2_y; *data++ = v2_z;
-            // v3
-            *data++ = v3_x; *data++ = v3_y; *data++ = v3_z;
-            *data++ = v3_x; *data++ = v3_y; *data++ = v3_z;
-
-            // second triangle (v1, v3, v4)
-            // v1
             *data++ = v1_x; *data++ = v1_y; *data++ = v1_z;
             *data++ = v1_x; *data++ = v1_y; *data++ = v1_z;
-            // v3
+            *data++ = v2_x; *data++ = v2_y; *data++ = v2_z;
+            *data++ = v2_x; *data++ = v2_y; *data++ = v2_z;
             *data++ = v3_x; *data++ = v3_y; *data++ = v3_z;
             *data++ = v3_x; *data++ = v3_y; *data++ = v3_z;
-            // v4
+            *data++ = v1_x; *data++ = v1_y; *data++ = v1_z;
+            *data++ = v1_x; *data++ = v1_y; *data++ = v1_z;
+            *data++ = v3_x; *data++ = v3_y; *data++ = v3_z;
+            *data++ = v3_x; *data++ = v3_y; *data++ = v3_z;
             *data++ = v4_x; *data++ = v4_y; *data++ = v4_z;
             *data++ = v4_x; *data++ = v4_y; *data++ = v4_z;
         }
@@ -561,10 +539,17 @@ void renderPlanets(sim_properties_t sim, GLuint shader_program, VBO_t planet_sha
         // create a scale matrix based on the radius of the planet (pulled from JSON data)
         float size_scale_factor = (float)sim.gb.radius[i] / SCALE;
         mat4 scale_mat = mat4_scale(size_scale_factor, size_scale_factor, size_scale_factor);
+
+        // create a rotation matrix based on the planet's attitude quaternion
+        mat4 rotation_mat = quaternionToMatrix(sim.gb.attitude[i]);
+
         // create a translation matrix based on the current in-sim-world position of the planet
         mat4 translate_mat = mat4_translation((float)sim.gb.pos_x[i] / SCALE, (float)sim.gb.pos_y[i] / SCALE, (float)sim.gb.pos_z[i] / SCALE);
-        // multiply the two matrices together to get a final scale/position matrix for the planet model on the screen
-        mat4 planet_model = mat4_mul(translate_mat, scale_mat);
+
+        // multiply matrices together
+        mat4 temp = mat4_mul(rotation_mat, scale_mat);
+        mat4 planet_model = mat4_mul(translate_mat, temp);
+
         // apply matrix and render to screen
         setMatrixUniform(shader_program, "model", &planet_model);
         glDrawArrays(GL_TRIANGLES, 0, sim.wp.planet_model_vertex_count);
@@ -756,6 +741,40 @@ void renderVisuals(sim_properties_t* sim, line_batch_t* line_batch, object_path_
             if (pp.z > 0) { r = 0.5f, g = 0.5f; b = 1.0f; }
             else { r = 1.0f, g = 0.5f; b = 0.5f; }
             addLine(line_batch, pp.x, pp.y, pp.z, pp.x, pp.y, 0, r, g, b);
+        }
+    }
+
+    // draw rotation axes for all bodies
+    for (int i = 0; i < sim->gb.count; i++) {//
+        if (sim->gb.rotational_v[i] != 0.0) {
+            // get planet position
+            vec3_f planet_pos = {
+                (float)sim->gb.pos_x[i] / SCALE,
+                (float)sim->gb.pos_y[i] / SCALE,
+                (float)sim->gb.pos_z[i] / SCALE
+            };
+
+            // extract rotation axis from attitude quaternion by rotating the z axis
+            vec3 z_axis = {0.0, 0.0, 1.0};
+            vec3 rotation_axis = quaternionRotate(sim->gb.attitude[i], z_axis);
+
+            // scale the axis to extend beyond the planet
+            float axis_length = (float)sim->gb.radius[i] / SCALE * 1.5f;
+            vec3_f axis_end1 = {
+                planet_pos.x + (float)rotation_axis.x * axis_length,
+                planet_pos.y + (float)rotation_axis.y * axis_length,
+                planet_pos.z + (float)rotation_axis.z * axis_length
+            };
+            vec3_f axis_end2 = {
+                planet_pos.x - (float)rotation_axis.x * axis_length,
+                planet_pos.y - (float)rotation_axis.y * axis_length,
+                planet_pos.z - (float)rotation_axis.z * axis_length
+            };
+
+            // draw the rotation axis lin
+            addLine(line_batch, axis_end1.x, axis_end1.y, axis_end1.z,
+                               axis_end2.x, axis_end2.y, axis_end2.z,
+                               0.0f, 1.0f, 1.0f);
         }
     }
 

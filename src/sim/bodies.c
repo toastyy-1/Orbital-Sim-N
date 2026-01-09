@@ -1,5 +1,6 @@
 #include "bodies.h"
 #include "../globals.h"
+#include "../math/matrix.h"
 #include <math.h>
 #include <string.h>
 #include <stdio.h>
@@ -81,6 +82,23 @@ void body_calculateKineticEnergy(const body_properties_t* bodies, const int i) {
     bodies->kinetic_energy[i] = 0.5 * bodies->mass[i] * bodies->vel[i] * bodies->vel[i];
 }
 
+// updates the rotational attitude of a body based on its rotational velocity
+void body_updateRotation(const body_properties_t* bodies, const int i, const double dt) {
+    if (bodies->rotational_v[i] != 0.0) {
+        // extract the rotation axis from the current attitude (this is the tilted spin axis)
+        // the spin axis is the body's local z axis transformed to world coordinates
+        vec3 local_z = {0.0, 0.0, 1.0};
+        vec3 world_spin_axis = quaternionRotate(bodies->attitude[i], local_z);
+
+        // create a rotation around this world-space axis
+        double rotation_angle = bodies->rotational_v[i] * dt;
+        quaternion_t delta_rotation = quaternionFromAxisAngle(world_spin_axis, rotation_angle);
+
+        // apply rotation in world frame (left multiply to rotate around world-space axis)
+        bodies->attitude[i] = quaternionMul(delta_rotation, bodies->attitude[i]);
+    }
+}
+
 // function to add a new body to the system
 void body_addOrbitalBody(body_properties_t* gb, const char* name, const double mass, const double radius, const double x_pos, const double y_pos, const double z_pos, const double x_vel, const double y_vel, const double z_vel) {
     int new_size = gb->count + 1;
@@ -107,6 +125,8 @@ void body_addOrbitalBody(body_properties_t* gb, const char* name, const double m
     double* temp_force_y = (double*)realloc(gb->force_y, new_size * sizeof(double));
     double* temp_force_z = (double*)realloc(gb->force_z, new_size * sizeof(double));
     double* temp_kinetic = (double*)realloc(gb->kinetic_energy, new_size * sizeof(double));
+    double* temp_rotational_v = (double*)realloc(gb->rotational_v, new_size * sizeof(double));
+    quaternion_t* temp_attitude = (quaternion_t*)realloc(gb->attitude, new_size * sizeof(quaternion_t));
 
     gb->names = temp_names;
     gb->mass = temp_mass;
@@ -129,6 +149,8 @@ void body_addOrbitalBody(body_properties_t* gb, const char* name, const double m
     gb->force_y = temp_force_y;
     gb->force_z = temp_force_z;
     gb->kinetic_energy = temp_kinetic;
+    gb->rotational_v = temp_rotational_v;
+    gb->attitude = temp_attitude;
 
     int idx = gb->count;
 
@@ -165,6 +187,12 @@ void body_addOrbitalBody(body_properties_t* gb, const char* name, const double m
     gb->force_y[idx] = 0.0;
     gb->force_z[idx] = 0.0;
     gb->kinetic_energy[idx] = 0.5 * mass * gb->vel[idx] * gb->vel[idx];
+
+    gb->rotational_v[idx] = 0.0;
+    gb->attitude[idx].w = 1.0;
+    gb->attitude[idx].x = 0.0;
+    gb->attitude[idx].y = 0.0;
+    gb->attitude[idx].z = 0.0;
 
     // increment the body count
     gb->count++;

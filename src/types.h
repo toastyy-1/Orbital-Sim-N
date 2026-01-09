@@ -96,6 +96,8 @@ typedef struct {
     double* force_y;
     double* force_z;
     double* kinetic_energy;
+    double* rotational_v; // the rate (rad/s) in which the body rotates (should stay constant)
+    quaternion_t* attitude; // the rotational axis by which the planet rotates (used for orbital inclination and whatnot)
 } body_properties_t;
 
 typedef struct {

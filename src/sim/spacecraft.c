@@ -51,7 +51,35 @@ void craft_checkBurnSchedule(const spacecraft_properties_t* sc, const int i, con
                     final_attitude = base_rotation;
                 }
             } else if (burn->relative_burn_target.normal) {
-                displayError("ERROR", "Normal burns are currently unsupported. Please reconfigure. Sorry! :(");
+                // normal: heading is perpendicular to the orbital plane defined by position and velocity
+                const double rel_pos_x = sc->pos_x[i] - gb->pos_x[target_id];
+                const double rel_pos_y = sc->pos_y[i] - gb->pos_y[target_id];
+                const double rel_pos_z = sc->pos_z[i] - gb->pos_z[target_id];
+                const double rel_vel_x = sc->vel_x[i] - gb->vel_x[target_id];
+                const double rel_vel_y = sc->vel_y[i] - gb->vel_y[target_id];
+                const double rel_vel_z = sc->vel_z[i] - gb->vel_z[target_id];
+                // create position and velocity vectors
+                vec3 rel_pos = {rel_pos_x, rel_pos_y, rel_pos_z};
+                vec3 rel_vel = {rel_vel_x, rel_vel_y, rel_vel_z};
+                vec3 normal_direction = cross_product_vec3(rel_pos, rel_vel);
+                // default forward direction (spacecraft local positive y axis)
+                vec3 default_forward = {0.0, 1.0, 0.0};
+                // rotation from default forward to normal direction
+                quaternion_t base_rotation = quaternionFromTwoVectors(default_forward, normal_direction);
+                // apply burn heading offset
+                if (burn->burn_heading != 0.0) {
+                    // normalize normal direction to get rotation axis
+                    double normal_mag = sqrt(normal_direction.x * normal_direction.x +
+                                           normal_direction.y * normal_direction.y +
+                                           normal_direction.z * normal_direction.z);
+                    vec3 rotation_axis = {normal_direction.x / normal_mag,
+                                         normal_direction.y / normal_mag,
+                                         normal_direction.z / normal_mag};
+                    quaternion_t offset_rotation = quaternionFromAxisAngle(rotation_axis, burn->burn_heading);
+                    final_attitude = quaternionMul(offset_rotation, base_rotation);
+                } else {
+                    final_attitude = base_rotation;
+                }
             }
             else {
                 displayError("ERROR", "Failed at determining burn type. If you see this you suck at coding lol");

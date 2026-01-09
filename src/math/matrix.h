@@ -18,11 +18,20 @@ static inline void normalize_3d(float v[3]) {
     }
 }
 
-// cross product of two 3D vectors
+// cross product of two 3D vectors (float)
 static inline void cross_product_3d(const float a[3], const float b[3], float result[3]) {
     result[0] = a[1] * b[2] - a[2] * b[1];
     result[1] = a[2] * b[0] - a[0] * b[2];
     result[2] = a[0] * b[1] - a[1] * b[0];
+}
+
+// cross product of two vec3 vectors (double precision)
+static inline vec3 cross_product_vec3(const vec3 a, const vec3 b) {
+    vec3 result;
+    result.x = a.y * b.z - a.z * b.y;
+    result.y = a.z * b.x - a.x * b.z;
+    result.z = a.x * b.y - a.y * b.x;
+    return result;
 }
 
 // creates an identity matrix

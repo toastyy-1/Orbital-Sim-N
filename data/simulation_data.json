@@ -9,7 +9,12 @@
       "vel_x": 0,
       "vel_y": 0,
       "vel_z": 0,
-      "radius": 6371000
+      "radius": 6371000,
+      "rotational_v": 7.2921159e-5,
+      "attitude_axis_x": 1.0,
+      "attitude_axis_y": 0.0,
+      "attitude_axis_z": 0.0,
+      "attitude_angle": 0.4101524
     },
     {
       "name": "Moon",
@@ -20,7 +25,12 @@
       "vel_x": 0,
       "vel_y": 1022,
       "vel_z": 0,
-      "radius": 1737000
+      "radius": 1737000,
+      "rotational_v": 2.6617e-6,
+      "attitude_axis_x": 1.0,
+      "attitude_axis_y": 0.0,
+      "attitude_axis_z": 0.0,
+      "attitude_angle": 0.1
     },
     {
       "name": "Planet 3",
@@ -31,7 +41,12 @@
       "vel_x": 0,
       "vel_y": 0,
       "vel_z": 1500,
-      "radius": 1737000
+      "radius": 1737000,
+      "rotational_v": 0.0001,
+      "attitude_axis_x": 0.0,
+      "attitude_axis_y": 1.0,
+      "attitude_axis_z": 0.0,
+      "attitude_angle": 0.0
     }
   ],
   "spacecraft": [

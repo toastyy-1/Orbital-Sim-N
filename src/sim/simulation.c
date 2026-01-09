@@ -91,6 +91,8 @@ void resetSim(sim_properties_t* sim) {
         free(gb->force_y);
         free(gb->force_z);
         free(gb->kinetic_energy);
+        free(gb->rotational_v);
+        free(gb->attitude);
 
         gb->count = 0;
         gb->names = NULL;
@@ -114,6 +116,8 @@ void resetSim(sim_properties_t* sim) {
         gb->force_y = NULL;
         gb->force_z = NULL;
         gb->kinetic_energy = NULL;
+        gb->rotational_v = NULL;
+        gb->attitude = NULL;
     }
 
     // free all craft from memory
@@ -230,6 +234,8 @@ void runCalculations(sim_properties_t* sim) {
             for (int i = 0; i < gb->count; i++) {
                 // updates the kinematic properties of each body (velocity, acceleration, position, etc.)
                 body_updateMotion(gb, i, wp->time_step);
+                // update the rotational attitude based on rotational velocity
+                body_updateRotation(gb, i, wp->time_step);
             }
         }
 

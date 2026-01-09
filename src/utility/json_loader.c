@@ -6,6 +6,7 @@
 #include <cjson/cJSON.h>
 #include <string.h>
 #include "../types.h"
+#include "../math/matrix.h"
 
 void displayError(const char* title, const char* message);
 
@@ -83,6 +84,11 @@ void readSimulationJSON(const char* FILENAME, body_properties_t* gb, spacecraft_
             cJSON* vel_x_item = cJSON_GetObjectItemCaseSensitive(body, "vel_x");
             cJSON* vel_y_item = cJSON_GetObjectItemCaseSensitive(body, "vel_y");
             cJSON* vel_z_item = cJSON_GetObjectItemCaseSensitive(body, "vel_z");
+            cJSON* rotational_v_item = cJSON_GetObjectItemCaseSensitive(body, "rotational_v");
+            cJSON* attitude_axis_x = cJSON_GetObjectItemCaseSensitive(body, "attitude_axis_x");
+            cJSON* attitude_axis_y = cJSON_GetObjectItemCaseSensitive(body, "attitude_axis_y");
+            cJSON* attitude_axis_z = cJSON_GetObjectItemCaseSensitive(body, "attitude_axis_z");
+            cJSON* attitude_angle = cJSON_GetObjectItemCaseSensitive(body, "attitude_angle");
 
             body_addOrbitalBody(gb,
                                 name_item->valuestring,
@@ -94,6 +100,23 @@ void readSimulationJSON(const char* FILENAME, body_properties_t* gb, spacecraft_
                                 vel_x_item->valuedouble,
                                 vel_y_item->valuedouble,
                                 vel_z_item ? vel_z_item->valuedouble : 0.0);
+
+            // set rotational velocity if present in JSON
+            int body_idx = gb->count - 1;
+            if (rotational_v_item != NULL) {
+                gb->rotational_v[body_idx] = rotational_v_item->valuedouble;
+            }
+
+            // set attitude if present in JSON
+            if (attitude_axis_x != NULL && attitude_axis_y != NULL &&
+                attitude_axis_z != NULL && attitude_angle != NULL) {
+                vec3 axis = {
+                    attitude_axis_x->valuedouble,
+                    attitude_axis_y->valuedouble,
+                    attitude_axis_z->valuedouble
+                };
+                gb->attitude[body_idx] = quaternionFromAxisAngle(axis, attitude_angle->valuedouble);
+            }
         }
     }
 

@@ -5,6 +5,7 @@
 
 void body_calculateGravForce(sim_properties_t* sim, int i, int j);
 void body_updateMotion(const body_properties_t* bodies, int i, double dt);
+void body_updateRotation(const body_properties_t* bodies, int i, double dt);
 void body_transformCoordinates(const body_properties_t* bodies, int i, window_params_t window_params);
 void body_calculateKineticEnergy(const body_properties_t* bodies, int i);
 float body_calculateVisualRadius(const body_properties_t* bodies, int i, window_params_t wp);
