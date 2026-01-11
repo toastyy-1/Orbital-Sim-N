@@ -45,16 +45,25 @@
         #info-text {
             position: absolute;
             top: 15px;
-            right: 10%;
-            transform: translateX(-10%);
+            right: 15px;
             z-index: 10;
             display: flex;
             align-items: center;
             background-color: rgba(0, 0, 0, 0.5);
             padding: 5px 15px;
             border-radius: 20px;
-            pointer-events: none;
+            pointer-events: auto;
             transition: opacity 0.5s;
+        }
+
+        #info-text a {
+            color: #bdd72e;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        #info-text a:hover {
+            text-decoration: underline;
         }
 
         .spinner {
@@ -186,7 +195,7 @@
     <div id="status">Downloading...</div>
 </div>
 <div id="info-text">
-    <a href="https://github.com/toastyy-1/Orbital-Sim-N">Click here for instructions</a>
+    <a id="info" href="https://github.com/toastyy-1/Orbital-Sim-N">Click here for instructions</a>
 </div>
 
 <!-- The Canvas -->
@@ -221,12 +230,18 @@
     const FILE_PATH = '/simulation_data.json';
     const modal = document.getElementById('json-modal');
     const textarea = document.getElementById('json-input');
+    const info_text = document.getElementById('info');
 
     // --- FIX: Stop SDL from stealing keyboard input ---
     // Emscripten/SDL often captures keyboard events on the window/document.
     // We must stop propagation on the textarea so the events don't bubble up to SDL.
     ['keydown', 'keyup', 'keypress'].forEach(eventType => {
         textarea.addEventListener(eventType, (e) => {
+            e.stopPropagation();
+        });
+    });
+    ['mousedown'].forEach(eventType => {
+        info_text.addEventListener(eventType, (e) => {
             e.stopPropagation();
         });
     });
