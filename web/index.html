@@ -42,6 +42,20 @@
             pointer-events: none;
             transition: opacity 0.5s;
         }
+        #info-text {
+            position: absolute;
+            top: 15px;
+            right: 10%;
+            transform: translateX(-10%);
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 5px 15px;
+            border-radius: 20px;
+            pointer-events: none;
+            transition: opacity 0.5s;
+        }
 
         .spinner {
             height: 18px;
@@ -170,6 +184,9 @@
 <div id="overlay-top">
     <div class="spinner" id="spinner"></div>
     <div id="status">Downloading...</div>
+</div>
+<div id="info-text">
+    <a href="https://github.com/toastyy-1/Orbital-Sim-N">Click here for instructions</a>
 </div>
 
 <!-- The Canvas -->
