@@ -34,35 +34,46 @@ static inline vec3 cross_product_vec3(const vec3 a, const vec3 b) {
     return result;
 }
 
-// vec3 helper functions for AoS physics calculations
 static inline vec3 vec3_zero(void) {
     return (vec3){0.0, 0.0, 0.0};
 }
 
+// add
 static inline vec3 vec3_add(vec3 a, vec3 b) {
     return (vec3){a.x + b.x, a.y + b.y, a.z + b.z};
 }
 
+// subtract
 static inline vec3 vec3_sub(vec3 a, vec3 b) {
     return (vec3){a.x - b.x, a.y - b.y, a.z - b.z};
 }
 
+// change magnitude of a vector
 static inline vec3 vec3_scale(vec3 v, double s) {
     return (vec3){v.x * s, v.y * s, v.z * s};
 }
 
+// dot product
 static inline double vec3_dot(vec3 a, vec3 b) {
     return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
+// cross product
+static inline vec3 vec3_cross(vec3 a, vec3 b) {
+    return (vec3){a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x};
+}
+
+// squared magnitude
 static inline double vec3_mag_sq(vec3 v) {
     return v.x * v.x + v.y * v.y + v.z * v.z;
 }
 
+// magnitude of vector
 static inline double vec3_mag(vec3 v) {
     return sqrt(vec3_mag_sq(v));
 }
 
+// normalize
 static inline vec3 vec3_normalize(vec3 v) {
     double mag = vec3_mag(v);
     if (mag > 0.0) {

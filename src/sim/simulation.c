@@ -148,9 +148,8 @@ void runCalculations(sim_properties_t* sim) {
                 craft_updateMotion(craft, wp->time_step);
 
                 // calculate orbital elements relative to the SOI body (or closest body)
-                int ref_body_id = craft->SOI_planet_id;
-                if (ref_body_id >= 0 && ref_body_id < gb->count) {
-                    craft_calculateOrbitalElements(craft, &gb->bodies[ref_body_id]);
+                if (craft->SOI_planet_id >= 0 && craft->SOI_planet_id < gb->count) {
+                    craft_calculateOrbitalElements(craft, &gb->bodies[craft->SOI_planet_id]);
                 }
             }
         }

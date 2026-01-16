@@ -9,68 +9,19 @@
 
 void displayError(const char* title, const char* message);
 
-// calculates orbital elements (apoapsis, periapsis, semi-major axis, eccentricity)
-// from position and velocity relative to a celestial body
+// calculates orbital elements
 void craft_calculateOrbitalElements(spacecraft_t* craft, const body_t* body) {
-    // calculate relative position and velocity
-    vec3 rel_pos = vec3_sub(craft->pos, body->pos);
-    vec3 rel_vel = vec3_sub(craft->vel, body->vel);
+    // first, the initial properties of the craft relative to the target planet should be calculated
+    vec3 c_pos      = vec3_sub(craft->pos, body->pos); // position vector
+    vec3 c_vel      = vec3_sub(craft->vel, body->vel); // velocity vector
+    double c_r      = vec3_mag(c_pos); // distance
+    double c_speed  = vec3_mag(c_vel);
+    double g_p      = G * body->mass; // gravitational parameter
+    vec3 c_h        = vec3_cross(c_pos, c_vel); // specific angular momentum
+    vec3 k          = { 0, 0, 1 };
+    vec3 c_n        = vec3_cross(k, c_h); // ascending node vector
+    vec3 c_e = {0,0,0}; // TODO: work on this formula
 
-    double r = vec3_mag(rel_pos);
-    double v = vec3_mag(rel_vel);
-
-    // gravitational parameter μ = G * M
-    double mu = G * body->mass;
-
-    // specific orbital energy: ε = v²/2 - μ/r
-    double specific_energy = (v * v) / 2.0 - mu / r;
-
-    // specific angular momentum vector: h = r × v
-    vec3 h_vec = cross_product_vec3(rel_pos, rel_vel);
-    double h = vec3_mag(h_vec);
-
-    // semi-major axis: a = -μ / (2ε)
-    // for elliptical orbits, ε < 0, so a > 0
-    // for hyperbolic orbits, ε > 0, so a < 0
-    // for parabolic orbits, ε = 0, a is infinite
-    double semi_major_axis;
-    if (fabs(specific_energy) < 1e-10) {
-        // parabolic orbit (very rare edge case)
-        semi_major_axis = INFINITY;
-    } else {
-        semi_major_axis = -mu / (2.0 * specific_energy);
-    }
-
-    // eccentricity: e = sqrt(1 + 2εh²/μ²)
-    double eccentricity_squared = 1.0 + (2.0 * specific_energy * h * h) / (mu * mu);
-    double eccentricity;
-    if (eccentricity_squared < 0.0) {
-        // numerical protection - shouldn't happen with proper physics
-        eccentricity = 0.0;
-    } else {
-        eccentricity = sqrt(eccentricity_squared);
-    }
-
-    // store orbital elements
-    craft->semi_major_axis = semi_major_axis;
-    craft->eccentricity = eccentricity;
-
-    // calculate apoapsis and periapsis
-    if (eccentricity >= 1.0) {
-        // hyperbolic or parabolic orbit - no bound apoapsis
-        // periapsis still exists: rp = a(1 - e) but for hyperbolic a < 0
-        // so we use: rp = h²/μ * 1/(1 + e)
-        craft->periapsis = (h * h / mu) / (1.0 + eccentricity);
-        craft->apoapsis = INFINITY;  // escaping orbit
-    } else if (semi_major_axis > 0.0) {
-        // elliptical orbit
-        craft->periapsis = semi_major_axis * (1.0 - eccentricity);
-        craft->apoapsis = semi_major_axis * (1.0 + eccentricity);
-    } else {
-        // fallback - shouldn't happen
-        craft->periapsis = r;
-        craft->apoapsis = r;
-    }
 }
 
 // check and activate burns
@@ -183,7 +134,7 @@ void craft_calculateGravForce(sim_properties_t* sim, const int craft_idx, const 
 // this is probably executed when the JSON is loaded
 void craft_findClosestPlanet(spacecraft_t* craft, body_properties_t* gb) {
     double closest_r_squared = INFINITY;
-    double closest_planet_id = 0;
+    int closest_planet_id = 0;
     for (int i = 0; i < gb->count; i++) {
         // calculate the distance between the spacecraft and the body
         vec3 delta_pos = vec3_sub(gb->bodies[i].pos, craft->pos);
