@@ -124,6 +124,7 @@ typedef struct {
     double dry_mass;
     double fuel_mass;
 
+
     vec3 pos;
     vec3 vel;
     double vel_mag;

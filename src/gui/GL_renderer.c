@@ -585,7 +585,7 @@ void renderCrafts(sim_properties_t sim, GLuint shader_program, VBO_t craft_shape
 }
 
 // render the stats on the screen
-void renderStats(sim_properties_t sim, font_t* font) {
+void renderStats(const sim_properties_t sim, font_t* font) {
 
     // calculate proper line height
     float line_height = 20.0f;
@@ -596,54 +596,65 @@ void renderStats(sim_properties_t sim, font_t* font) {
     char text_buffer[64];
 
     // paused indication
-    if (sim.wp.sim_running) sprintf(text_buffer, "Sim running");
-    else sprintf(text_buffer, "Sim paused");
+    if (sim.wp.sim_running) snprintf(text_buffer, sizeof(text_buffer), "Sim running");
+    else snprintf(text_buffer, sizeof(text_buffer), "Sim paused");
     addText(font, cursor_pos[0], cursor_pos[1], text_buffer, 0.8f);
     cursor_pos[1] += line_height;
 
     // write time step
-    sprintf(text_buffer, "Step: %f", sim.wp.time_step);
+    snprintf(text_buffer, sizeof(text_buffer), "Step: %.4g", sim.wp.time_step);
     addText(font, cursor_pos[0], cursor_pos[1], text_buffer, 0.8f);
     cursor_pos[1] += line_height;
 
     // time indication
     double time = sim.wp.sim_time / 3600;
-    if (time < 72.0) sprintf(text_buffer, "Time: %f hrs", time);
-    else if (time < 8766.0) sprintf(text_buffer, "Time: %f days", time / 24);
+    if (time < 72.0) snprintf(text_buffer, sizeof(text_buffer), "Time: %.2f hrs", time);
+    else if (time < 8766.0) snprintf(text_buffer, sizeof(text_buffer), "Time: %.2f days", time / 24);
     addText(font, cursor_pos[0], cursor_pos[1], text_buffer, 0.8f);
     cursor_pos[1] += line_height;
 
     // spacer
     cursor_pos[1] += line_height;
 
-    // indication for closest planet
     for (int i = 0; i < sim.gs.count; i++) {
-        sprintf(text_buffer, sim.gs.spacecraft[i].name);
+        int closest_id = sim.gs.spacecraft[i].closest_planet_id;
+        int soi_id = sim.gs.spacecraft[i].SOI_planet_id;
+
+        snprintf(text_buffer, sizeof(text_buffer), "%s", sim.gs.spacecraft[i].name);
         addText(font, cursor_pos[0], cursor_pos[1], text_buffer, 0.8f);
         cursor_pos[1] += line_height;
 
-        sprintf(text_buffer, "Closest Planet: %s", sim.gb.bodies[sim.gs.spacecraft[i].closest_planet_id].name);
+        snprintf(text_buffer, sizeof(text_buffer), "Closest Planet: %s", sim.gb.bodies[closest_id].name);
         addText(font, cursor_pos[0], cursor_pos[1], text_buffer, 0.7f);
         cursor_pos[1] += line_height;
 
-        sprintf(text_buffer, "Distance: %f km", sqrt(sim.gs.spacecraft[i].closest_r_squared) / 1000 - sim.gb.bodies[sim.gs.spacecraft[i].closest_planet_id].radius / 1000);
+        snprintf(text_buffer, sizeof(text_buffer), "Distance: %.2f km", sqrt(sim.gs.spacecraft[i].closest_r_squared) / 1000 - sim.gb.bodies[closest_id].radius / 1000);
         addText(font, cursor_pos[0], cursor_pos[1], text_buffer, 0.7f);
         cursor_pos[1] += line_height;
 
-        sprintf(text_buffer, "In SOI of: %s", sim.gb.bodies[sim.gs.spacecraft[i].SOI_planet_id].name);
+        snprintf(text_buffer, sizeof(text_buffer), "In SOI of: %s", sim.gb.bodies[soi_id].name);
         addText(font, cursor_pos[0], cursor_pos[1], text_buffer, 0.7f);
         cursor_pos[1] += line_height;
 
-        if (isinf(sim.gs.spacecraft[i].apoapsis)) {
-            sprintf(text_buffer, "Apoapsis: Escape");
-        } else {
-            sprintf(text_buffer, "Apoapsis: %.1f km", sim.gs.spacecraft[i].apoapsis / 1000.0);
-        }
+        snprintf(text_buffer, sizeof(text_buffer), "Semi Major Axis: %.4g", sim.gs.spacecraft[i].semi_major_axis);
+        addText(font, cursor_pos[0], cursor_pos[1], text_buffer, 0.7f);
+        cursor_pos[1] += line_height;
+        snprintf(text_buffer, sizeof(text_buffer), "Eccentricity: %.6f", sim.gs.spacecraft[i].eccentricity);
+        addText(font, cursor_pos[0], cursor_pos[1], text_buffer, 0.7f);
+        cursor_pos[1] += line_height;
+        snprintf(text_buffer, sizeof(text_buffer), "Inclination: %.4f", sim.gs.spacecraft[i].inclination);
+        addText(font, cursor_pos[0], cursor_pos[1], text_buffer, 0.7f);
+        cursor_pos[1] += line_height;
+        snprintf(text_buffer, sizeof(text_buffer), "Ascending Node: %.4f", sim.gs.spacecraft[i].ascending_node);
+        addText(font, cursor_pos[0], cursor_pos[1], text_buffer, 0.7f);
+        cursor_pos[1] += line_height;
+        snprintf(text_buffer, sizeof(text_buffer), "Arg of Periapsis: %.4f", sim.gs.spacecraft[i].arg_periapsis);
+        addText(font, cursor_pos[0], cursor_pos[1], text_buffer, 0.7f);
+        cursor_pos[1] += line_height;
+        snprintf(text_buffer, sizeof(text_buffer), "True Anomaly: %.4f", sim.gs.spacecraft[i].true_anomaly);
         addText(font, cursor_pos[0], cursor_pos[1], text_buffer, 0.7f);
         cursor_pos[1] += line_height;
 
-        sprintf(text_buffer, "Periapsis: %.1f km", sim.gs.spacecraft[i].periapsis / 1000.0);
-        addText(font, cursor_pos[0], cursor_pos[1], text_buffer, 0.7f);
         cursor_pos[1] += line_height;
     }
 }
