@@ -81,7 +81,11 @@ jobs:
       shell: bash
       run: |
         cd build
-        BINARY=$(find . -name "OrbitSimulation" -type f -executable | head -1)
+        BINARY=$(find . -type f -name "OrbitSimulation" ! -name "*.o" ! -name "*.a" | head -1)
+        if [ -z "$BINARY" ]; then
+          ls -la
+          exit 1
+        fi
         cp ../data/simulation_data.json .
         cp -r ../shaders .
         cp -r ../assets .
