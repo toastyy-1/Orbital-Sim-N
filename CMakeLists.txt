@@ -258,3 +258,34 @@ if(EMSCRIPTEN)
             COMMENT "Copying coi-serviceworker.js to build directory"
     )
 endif()
+
+# --- 8. INSTALLATION & PACKAGING ---
+include(GNUInstallDirs)
+
+install(TARGETS ${PROJECT_NAME}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/assets" DESTINATION .)
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/shaders" DESTINATION .)
+
+# NOTE: simulation_data.json is NOT installed because it should be excluded from packages.
+
+# CPack configuration
+set(CPACK_PACKAGE_NAME "OrbitSimulation")
+set(CPACK_PACKAGE_VENDOR "OrbitSimulation Developers")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Orbital Simulation with N-body physics")
+set(CPACK_PACKAGE_VERSION "1.0.0")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
+set(CPACK_PACKAGE_INSTALL_DIRECTORY "OrbitSimulation")
+
+if(WIN32)
+    set(CPACK_GENERATOR "ZIP")
+elseif(APPLE)
+    set(CPACK_GENERATOR "TGZ")
+else()
+    set(CPACK_GENERATOR "TGZ;DEB;RPM")
+    set(CPACK_DEBIAN_PACKAGE_MAINTAINER "OrbitSimulation Developers")
+endif()
+
+include(CPack)

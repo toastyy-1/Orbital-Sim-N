@@ -73,15 +73,21 @@ jobs:
       run: |
         cd build/Release
         $binary = Get-ChildItem -Name "OrbitSimulation*" -Include *.exe | Select-Object -First 1
-        Compress-Archive -Path $binary, ../data, ../shaders, ../assets, SDL3*.dll -DestinationPath "../OrbitSimulation-${{ matrix.config.artifact }}.zip" -Force
+        cp ../../data/simulation_data.json .
+        Compress-Archive -Path $binary, ../../shaders, ../../assets, simulation_data.json, SDL3*.dll -DestinationPath "../OrbitSimulation-${{ matrix.config.artifact }}.zip" -Force
+        cp simulation_data.json ../../simulation_data.json
 
     - name: Zip artifacts (Unix/macOS)
       if: matrix.config.os != 'windows-latest' && !matrix.config.package
       shell: bash
       run: |
         cd build
-        BINARY=$(find . -name "OrbitSimulation*" -type f -executable | head -1)
-        tar -czf OrbitSimulation-${{ matrix.config.artifact }}.tar.gz "$BINARY" data shaders assets
+        BINARY=$(find . -name "OrbitSimulation" -type f -executable | head -1)
+        cp ../data/simulation_data.json .
+        cp -r ../shaders .
+        cp -r ../assets .
+        tar -czf OrbitSimulation-${{ matrix.config.artifact }}.tar.gz "$BINARY" simulation_data.json shaders assets
+        cp simulation_data.json ../
 
     - name: Copy package artifacts
       if: matrix.config.package
@@ -90,6 +96,7 @@ jobs:
         cp OrbitSimulation*.deb ../OrbitSimulation-${{ matrix.config.artifact }}.deb 2>/dev/null || true
         cp OrbitSimulation*.rpm ../OrbitSimulation-${{ matrix.config.artifact }}.rpm 2>/dev/null || true
         cp OrbitSimulation*.tar.gz ../ 2>/dev/null || true
+        cp ../data/simulation_data.json ../simulation_data.json
 
     - name: Upload temp artifact
       uses: actions/upload-artifact@v4
@@ -98,6 +105,7 @@ jobs:
         path: |
           build/OrbitSimulation-${{ matrix.config.artifact }}.*
           OrbitSimulation-${{ matrix.config.artifact }}.*
+          simulation_data.json
 
   nightly-release:
     needs: build
@@ -120,3 +128,4 @@ jobs:
           ubuntu-generic/OrbitSimulation-ubuntu-*.tar.gz
           ubuntu-deb/*.deb
           ubuntu-rpm/*.rpm
+          */simulation_data.json
