@@ -193,12 +193,54 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 
 # Windows: Copy SDL3 DLLs automatically
 if(WIN32)
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            $<TARGET_FILE:SDL3::SDL3>
-            $<TARGET_FILE_DIR:${PROJECT_NAME}>
-            COMMENT "Copying SDL3 DLLs"
-    )
+    # First check if using Conan (sdl::sdl target exists)
+    if(TARGET sdl::sdl)
+        get_target_property(SDL3_IMPORTED_LOCATION sdl::sdl IMPORTED_LOCATION_RELEASE)
+        if(NOT SDL3_IMPORTED_LOCATION)
+            get_target_property(SDL3_IMPORTED_LOCATION sdl::sdl IMPORTED_LOCATION)
+        endif()
+        if(SDL3_IMPORTED_LOCATION)
+            get_filename_component(SDL3_LIB_DIR "${SDL3_IMPORTED_LOCATION}" DIRECTORY)
+            file(GLOB SDL3_DLLS "${SDL3_LIB_DIR}/../bin/SDL3*.dll")
+            if(SDL3_DLLS)
+                add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                        ${SDL3_DLLS}
+                        $<TARGET_FILE_DIR:${PROJECT_NAME}>
+                    COMMENT "Copying SDL3 DLLs from Conan package"
+                )
+            endif()
+        endif()
+    elseif(TARGET SDL3::SDL3)
+        # Native SDL3 installation (vcpkg, manual, etc.)
+        # Check if it's a real library target (has IMPORTED_LOCATION)
+        get_target_property(SDL3_TYPE SDL3::SDL3 TYPE)
+        if(SDL3_TYPE STREQUAL "SHARED_LIBRARY")
+            add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    $<TARGET_FILE:SDL3::SDL3>
+                    $<TARGET_FILE_DIR:${PROJECT_NAME}>
+                COMMENT "Copying SDL3 DLL"
+            )
+        else()
+            # It's an interface/alias target, search for DLL manually
+            get_target_property(SDL3_INCLUDE_DIRS SDL3::SDL3 INTERFACE_INCLUDE_DIRECTORIES)
+            if(SDL3_INCLUDE_DIRS)
+                list(GET SDL3_INCLUDE_DIRS 0 SDL3_FIRST_INCLUDE)
+                get_filename_component(SDL3_ROOT "${SDL3_FIRST_INCLUDE}" DIRECTORY)
+                file(GLOB SDL3_DLLS "${SDL3_ROOT}/bin/SDL3*.dll" "${SDL3_ROOT}/lib/SDL3*.dll")
+                
+                if(SDL3_DLLS)
+                    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+                        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                            ${SDL3_DLLS}
+                            $<TARGET_FILE_DIR:${PROJECT_NAME}>
+                        COMMENT "Copying SDL3 DLLs from installation"
+                    )
+                endif()
+            endif()
+        endif()
+    endif()
 endif()
 
 # WASM: Copy files to build directory
