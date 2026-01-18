@@ -55,7 +55,7 @@ window_params_t init_window_params(void) {
     return wp;
 }
 
-console_t init_console(window_params_t wp) {
+console_t init_console(const window_params_t wp) {
     console_t console = {0};
 
     // init text input
@@ -72,7 +72,7 @@ console_t init_console(window_params_t wp) {
     return console;
 }
 
-SDL_GL_init_t init_SDL_OPENGL_window(const char* title, int width, int height, Uint32* outWindowID) {
+SDL_GL_init_t init_SDL_OPENGL_window(const char* title, const int width, const int height, Uint32* outWindowID) {
     SDL_GL_init_t result = {0};
 
     // set OpenGL attributes
@@ -103,7 +103,7 @@ SDL_GL_init_t init_SDL_OPENGL_window(const char* title, int width, int height, U
     }
 
     glewExperimental = GL_TRUE;
-    GLenum glewError = glewInit();
+    const GLenum glewError = glewInit();
     if (glewError != GLEW_OK) {
         fprintf(stderr, "Error initializing GLEW: %s\n", (const char*)glewGetErrorString(glewError));
         return result;
@@ -138,14 +138,14 @@ static void handleMouseMotionEvent(const SDL_Event* event, sim_properties_t* sim
     // viewport dragging
     if (wp->is_dragging) {
         // calculate mouse movement delta
-        float delta_x = event->motion.x - wp->drag_last_x;
+        const float delta_x = event->motion.x - wp->drag_last_x;
 
         // convert mouse movement to rotation angle
-        float rotation_sensitivity = 0.01f;
-        float rotation_angle = delta_x * rotation_sensitivity;
+        const float rotation_sensitivity = 0.01f;
+        const float rotation_angle = delta_x * rotation_sensitivity;
 
         // rotate camera position around Z axis
-        mat4 rotation = mat4_rotationZ(rotation_angle);
+        const mat4 rotation = mat4_rotationZ(rotation_angle);
         wp->camera_pos = mat4_transformPoint(rotation, wp->camera_pos);
 
         // update last mouse position for next frame
@@ -263,7 +263,7 @@ static void handleKeyboardEvent(const SDL_Event* event, sim_properties_t* sim) {
 static void handleTextInputEvent(const SDL_Event* event, sim_properties_t* sim) {
     console_t* console = &sim->console;
 
-    size_t text_len = strlen(event->text.text);
+    const size_t text_len = strlen(event->text.text);
     if (console->cmd_text_box_length + text_len < 255) {
         strcat(console->cmd_text_box, event->text.text);
         console->cmd_text_box_length += (int)text_len;
@@ -337,7 +337,7 @@ void runEventCheck(SDL_Event* event, sim_properties_t* sim) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 void renderCMDWindow(sim_properties_t* sim, font_t* font) {
     console_t* console = &sim->console;
-    window_params_t* wp = &sim->wp;
+    const window_params_t* wp = &sim->wp;
 
     // display what's in the text box
     addText(font, console->cmd_pos_x, console->cmd_pos_y, console->cmd_text_box, 1.0f);

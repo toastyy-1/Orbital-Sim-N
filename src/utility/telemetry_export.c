@@ -5,13 +5,13 @@
 #include "telemetry_export.h"
 #include <stdio.h>
 
-void exportTelemetryBinary(binary_filenames_t filenames, const sim_properties_t* sim) {
+void exportTelemetryBinary(const binary_filenames_t filenames, const sim_properties_t* sim) {
     const body_properties_t* gb = &sim->gb;
     const window_params_t* wp = &sim->wp;
 
     // write body position data to the .bin file if enabled
     for (int i = 0; i < gb->count; i++) {
-        body_t* body = &gb->bodies[i];
+        const body_t* body = &gb->bodies[i];
 
         global_data_t gd;
         gd.timestamp = wp->sim_time;

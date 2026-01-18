@@ -17,7 +17,7 @@ char* loadShaderSource(const char* filepath) {
     }
 
     fseek(file, 0, SEEK_END);
-    long size = ftell(file);
+    const long size = ftell(file);
     fseek(file, 0, SEEK_SET);
 
     char* source = (char*)malloc(size + 1);
@@ -27,7 +27,7 @@ char* loadShaderSource(const char* filepath) {
         return NULL;
     }
 
-    size_t bytesRead = fread(source, 1, size, file);
+    const size_t bytesRead = fread(source, 1, size, file);
     source[bytesRead] = '\0';  // Use actual bytes read, not file size
 
     fclose(file);
@@ -50,7 +50,7 @@ GLuint createShaderProgram(const char* vertexPath, const char* fragmentPath) {
     }
 
     // compile the vertex shader
-    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    const GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShader, 1, (const char**)&vertexShaderSource, NULL);
     glCompileShader(vertexShader);
 
@@ -67,7 +67,7 @@ GLuint createShaderProgram(const char* vertexPath, const char* fragmentPath) {
     }
 
     // compile the fragment shader
-    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    const GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fragmentShader, 1, (const char**)&fragmentShaderSource, NULL);
     glCompileShader(fragmentShader);
 
@@ -83,7 +83,7 @@ GLuint createShaderProgram(const char* vertexPath, const char* fragmentPath) {
     }
 
     // link the shaders into a program
-    GLuint shaderProgram = glCreateProgram();
+    const GLuint shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertexShader);
     glAttachShader(shaderProgram, fragmentShader);
     glLinkProgram(shaderProgram);
@@ -172,7 +172,7 @@ mat4 createViewMatrix_originCentered(const float cameraPos[3]) {
 // creates a perspective projection matrix
 mat4 createProjectionMatrix(const float fov, const float aspect, const float near, const float far) {
     mat4 projMatrix;
-    float f = 1.0f / tanf(fov * 0.5f);
+    const float f = 1.0f / tanf(fov * 0.5f);
 
     projMatrix.m[0] = f / aspect;
     projMatrix.m[1] = 0.0f;
@@ -198,25 +198,25 @@ mat4 createProjectionMatrix(const float fov, const float aspect, const float nea
 
 // sets a matrix uniform in the shader
 void setMatrixUniform(const GLuint shaderProgram, const char* name, const mat4* matrix) {
-    GLint location = glGetUniformLocation(shaderProgram, name);
+    const GLint location = glGetUniformLocation(shaderProgram, name);
     glUniformMatrix4fv(location, 1, GL_FALSE, matrix->m);
 }
 
 // main function for handling the camera, should be called in main().
 void castCamera(const sim_properties_t sim, const GLuint shaderProgram) {
     // apply zoom to camera position unit vector
-    float zoomedCameraPos[3] = {
+    const float zoomedCameraPos[3] = {
         sim.wp.camera_pos.x * sim.wp.zoom,
         sim.wp.camera_pos.y * sim.wp.zoom,
         sim.wp.camera_pos.z * sim.wp.zoom
     };
 
     // create view matrix
-    mat4 viewMatrix = createViewMatrix_originCentered(zoomedCameraPos);
+    const mat4 viewMatrix = createViewMatrix_originCentered(zoomedCameraPos);
 
     // create projection matrix
-    float aspect = sim.wp.window_size_x / sim.wp.window_size_y;
-    mat4 projMatrix = createProjectionMatrix(3.14159f / 4.0f, aspect, 0.1f, 100000.0f);
+    const float aspect = sim.wp.window_size_x / sim.wp.window_size_y;
+    const mat4 projMatrix = createProjectionMatrix(3.14159f / 4.0f, aspect, 0.1f, 100000.0f);
 
     // set matrices in shader
     setMatrixUniform(shaderProgram, "view", &viewMatrix);
@@ -224,7 +224,7 @@ void castCamera(const sim_properties_t sim, const GLuint shaderProgram) {
 }
 
 // sphere mesh generation
-sphere_mesh_t generateUnitSphere(unsigned int stacks, unsigned int sectors) {
+sphere_mesh_t generateUnitSphere(const unsigned int stacks, const unsigned int sectors) {
     sphere_mesh_t sphere = {0};
     sphere.vertex_count = stacks * sectors * 6;
     sphere.data_size = sphere.vertex_count * 6 * sizeof(float);
@@ -239,24 +239,24 @@ sphere_mesh_t generateUnitSphere(unsigned int stacks, unsigned int sectors) {
 
     // generate vertices for each stack and sector
     for (unsigned int i = 0; i < stacks; ++i) {
-        float theta1 = (float)i * M_PI_f / (float)stacks;
-        float theta2 = (float)(i + 1) * M_PI_f / (float)stacks;
+        const float theta1 = (float)i * M_PI_f / (float)stacks;
+        const float theta2 = (float)(i + 1) * M_PI_f / (float)stacks;
 
         for (unsigned int j = 0; j < sectors; ++j) {
-            float phi1 = (float)j * 2.0f * M_PI_f / (float)sectors;
-            float phi2 = (float)(j + 1) * 2.0f * M_PI_f / (float)sectors;
-            float v1_x = cosf(phi1) * sinf(theta1);
-            float v1_y = sinf(phi1) * sinf(theta1);
-            float v1_z = cosf(theta1);
-            float v2_x = cosf(phi1) * sinf(theta2);
-            float v2_y = sinf(phi1) * sinf(theta2);
-            float v2_z = cosf(theta2);
-            float v3_x = cosf(phi2) * sinf(theta2);
-            float v3_y = sinf(phi2) * sinf(theta2);
-            float v3_z = cosf(theta2);
-            float v4_x = cosf(phi2) * sinf(theta1);
-            float v4_y = sinf(phi2) * sinf(theta1);
-            float v4_z = cosf(theta1);
+            const float phi1 = (float)j * 2.0f * M_PI_f / (float)sectors;
+            const float phi2 = (float)(j + 1) * 2.0f * M_PI_f / (float)sectors;
+            const float v1_x = cosf(phi1) * sinf(theta1);
+            const float v1_y = sinf(phi1) * sinf(theta1);
+            const float v1_z = cosf(theta1);
+            const float v2_x = cosf(phi1) * sinf(theta2);
+            const float v2_y = sinf(phi1) * sinf(theta2);
+            const float v2_z = cosf(theta2);
+            const float v3_x = cosf(phi2) * sinf(theta2);
+            const float v3_y = sinf(phi2) * sinf(theta2);
+            const float v3_z = cosf(theta2);
+            const float v4_x = cosf(phi2) * sinf(theta1);
+            const float v4_y = sinf(phi2) * sinf(theta1);
+            const float v4_z = cosf(theta1);
             *data++ = v1_x; *data++ = v1_y; *data++ = v1_z;
             *data++ = v1_x; *data++ = v1_y; *data++ = v1_z;
             *data++ = v2_x; *data++ = v2_y; *data++ = v2_z;
@@ -285,14 +285,14 @@ void freeSphere(sphere_mesh_t* sphere) {
 }
 
 // line rendering stuff
-line_batch_t createLineBatch(size_t max_lines) {
+line_batch_t createLineBatch(const size_t max_lines) {
     line_batch_t batch = {0};
 
     batch.capacity = max_lines;
     batch.count = 0;
 
     // allocate vertex buffer
-    size_t vertex_array_size = max_lines * 2 * 6 * sizeof(float);
+    const size_t vertex_array_size = max_lines * 2 * 6 * sizeof(float);
     batch.vertices = (float*)malloc(vertex_array_size);
 
     if (!batch.vertices) {
@@ -321,13 +321,13 @@ line_batch_t createLineBatch(size_t max_lines) {
     return batch;
 }
 
-void addLine(line_batch_t* batch, float x1, float y1, float z1, float x2, float y2, float z2, float r, float g, float b) {
+void addLine(line_batch_t* batch, const float x1, const float y1, const float z1, const float x2, const float y2, const float z2, const float r, const float g, const float b) {
     if (!batch || !batch->vertices || batch->count >= batch->capacity) {
         return;
     }
 
     // calculate index for this line's data
-    size_t index = batch->count * 12; // 12 floats per line (2 vertices * 6 floats)
+    const size_t index = batch->count * 12; // 12 floats per line (2 vertices * 6 floats)
 
     // first vertex
     batch->vertices[index + 0] = x1;
@@ -348,7 +348,7 @@ void addLine(line_batch_t* batch, float x1, float y1, float z1, float x2, float 
     batch->count++;
 }
 
-void renderLines(line_batch_t* batch, GLuint shader_program) {
+void renderLines(line_batch_t* batch, const GLuint shader_program) {
     if (!batch || !batch->vertices || batch->count == 0) {
         return;
     }
@@ -362,7 +362,7 @@ void renderLines(line_batch_t* batch, GLuint shader_program) {
 
     glBindVertexArray(batch->vbo.VAO);
 
-    mat4 identity_mat = mat4_identity();
+    const mat4 identity_mat = mat4_identity();
     setMatrixUniform(shader_program, "model", &identity_mat);
 
     // draw all lines in one call
@@ -396,7 +396,7 @@ void freeLines(line_batch_t* batch) {
 
 static stbtt_bakedchar cdata[96];
 
-font_t initFont(const char* path, float size) {
+font_t initFont(const char* path, const float size) {
     font_t f = {0};
 
     FILE* fp = fopen(path, "rb");
@@ -405,7 +405,7 @@ font_t initFont(const char* path, float size) {
         return f;
     }
     fseek(fp, 0, SEEK_END);
-    long len = ftell(fp);
+    const long len = ftell(fp);
     rewind(fp);
     unsigned char* buf = malloc(len);
     fread(buf, 1, len, fp);
@@ -452,11 +452,11 @@ font_t initFont(const char* path, float size) {
     return f;
 }
 
-void addText(font_t* font, float x, float y, const char* text, float scale) {
+void addText(font_t* font, float x, const float y, const char* text, const float scale) {
     for (; *text; text++) {
-        int c = *text - 32;
+        const int c = *text - 32;
         if (c < 0 || c >= 96) continue;
-        stbtt_bakedchar* b = &cdata[c];
+        const stbtt_bakedchar* b = &cdata[c];
 
         float x0 = x + b->xoff * scale, y0 = y + b->yoff * scale;
         float x1 = x0 + (float)(b->x1 - b->x0) * scale, y1 = y0 + (float)(b->y1 - b->y0) * scale;
@@ -475,13 +475,13 @@ void addText(font_t* font, float x, float y, const char* text, float scale) {
     }
 }
 
-void renderText(font_t* font, float window_w, float window_h, float r, float g, float b) {
+void renderText(font_t* font, const float window_w, const float window_h, const float r, const float g, const float b) {
     if (!font->count) return;
 
     glDisable(GL_DEPTH_TEST);
     glUseProgram(font->shader);
 
-    float proj[16] =   {2/window_w,0,0,0,
+    const float proj[16] =   {2/window_w,0,0,0,
                         0,-2/window_h,0,0,
                         0,0,-1,0,
                         -1,1,0,1};
@@ -514,8 +514,8 @@ void freeFont(const font_t* font) {
 
 
 // render the coordinate plane to the screen
-void renderCoordinatePlane(sim_properties_t sim, line_batch_t* line_batch) {
-    float scale = sim.wp.zoom;
+void renderCoordinatePlane(const sim_properties_t sim, line_batch_t* line_batch) {
+    const float scale = sim.wp.zoom;
 
     // X axis (red) - horizontal
     addLine(line_batch, -10.0f * scale, 0.0f, 0.0f, 10.0f * scale, 0.0f, 0.0f, 0.3f, 0.0f, 0.0f);
@@ -532,26 +532,26 @@ void renderCoordinatePlane(sim_properties_t sim, line_batch_t* line_batch) {
 }
 
 // render the sim planets to the screen
-void renderPlanets(sim_properties_t sim, GLuint shader_program, VBO_t planet_shape_buffer) {
+void renderPlanets(const sim_properties_t sim, const GLuint shader_program, const VBO_t planet_shape_buffer) {
     glBindVertexArray(planet_shape_buffer.VAO);
     for (int i = 0; i < sim.gb.count; i++) {
-        body_t* body = &sim.gb.bodies[i];
+        const body_t* body = &sim.gb.bodies[i];
 
         // create a scale matrix based on the radius of the planet
-        float size_scale_factor = (float)body->radius / SCALE;
-        mat4 scale_mat = mat4_scale(size_scale_factor, size_scale_factor, size_scale_factor);
+        const float size_scale_factor = (float)body->radius / SCALE;
+        const mat4 scale_mat = mat4_scale(size_scale_factor, size_scale_factor, size_scale_factor);
 
         // create a rotation matrix based on the planet's attitude quaternion
-        mat4 rotation_mat = quaternionToMatrix(body->attitude);
+        const mat4 rotation_mat = quaternionToMatrix(body->attitude);
 
         // create a translation matrix based on the current position
-        mat4 translate_mat = mat4_translation(
+        const mat4 translate_mat = mat4_translation(
             (float)body->pos.x / SCALE,
             (float)body->pos.y / SCALE,
             (float)body->pos.z / SCALE);
 
         // multiply matrices together
-        mat4 temp = mat4_mul(rotation_mat, scale_mat);
+        const mat4 temp = mat4_mul(rotation_mat, scale_mat);
         mat4 planet_model = mat4_mul(translate_mat, temp);
 
         // apply matrix and render to screen
@@ -561,21 +561,21 @@ void renderPlanets(sim_properties_t sim, GLuint shader_program, VBO_t planet_sha
 }
 
 // render the sim crafts to the renderer
-void renderCrafts(sim_properties_t sim, GLuint shader_program, VBO_t craft_shape_buffer) {
+void renderCrafts(const sim_properties_t sim, const GLuint shader_program, const VBO_t craft_shape_buffer) {
     glBindVertexArray(craft_shape_buffer.VAO);
     for (int i = 0; i < sim.gs.count; i++) {
-        spacecraft_t* craft = &sim.gs.spacecraft[i];
+        const spacecraft_t* craft = &sim.gs.spacecraft[i];
 
         // create a scale matrix
-        float size_scale_factor = 0.1f;
-        mat4 S = mat4_scale(size_scale_factor, size_scale_factor * 2, size_scale_factor);
-        mat4 R = quaternionToMatrix(craft->attitude);
-        mat4 T = mat4_translation(
+        const float size_scale_factor = 0.05f;
+        const mat4 S = mat4_scale(size_scale_factor, size_scale_factor * 3, size_scale_factor);
+        const mat4 R = quaternionToMatrix(craft->attitude);
+        const mat4 T = mat4_translation(
             (float)craft->pos.x / SCALE,
             (float)craft->pos.y / SCALE,
             (float)craft->pos.z / SCALE);
 
-        mat4 temp = mat4_mul(R, S);
+        const mat4 temp = mat4_mul(R, S);
         mat4 model = mat4_mul(T, temp);
 
         // apply matrix and render to screen
@@ -588,8 +588,8 @@ void renderCrafts(sim_properties_t sim, GLuint shader_program, VBO_t craft_shape
 void renderStats(const sim_properties_t sim, font_t* font) {
 
     // calculate proper line height
-    float line_height = 20.0f;
-    float cursor_starting_pos[2] = { 10.0f, line_height + 10.0f};
+    const float line_height = 20.0f;
+    const float cursor_starting_pos[2] = { 10.0f, line_height + 10.0f};
     float cursor_pos[2] = { cursor_starting_pos[0], cursor_starting_pos[1] };
 
     // text buffer used to hold text written to the stats window
@@ -607,7 +607,7 @@ void renderStats(const sim_properties_t sim, font_t* font) {
     cursor_pos[1] += line_height;
 
     // time indication
-    double time = sim.wp.sim_time / 3600;
+    const double time = sim.wp.sim_time / 3600;
     if (time < 72.0) snprintf(text_buffer, sizeof(text_buffer), "Time: %.2f hrs", time);
     else if (time < 8766.0) snprintf(text_buffer, sizeof(text_buffer), "Time: %.2f days", time / 24);
     addText(font, cursor_pos[0], cursor_pos[1], text_buffer, 0.8f);
@@ -617,8 +617,8 @@ void renderStats(const sim_properties_t sim, font_t* font) {
     cursor_pos[1] += line_height;
 
     for (int i = 0; i < sim.gs.count; i++) {
-        int closest_id = sim.gs.spacecraft[i].closest_planet_id;
-        int soi_id = sim.gs.spacecraft[i].SOI_planet_id;
+        const int closest_id = sim.gs.spacecraft[i].closest_planet_id;
+        const int soi_id = sim.gs.spacecraft[i].SOI_planet_id;
 
         snprintf(text_buffer, sizeof(text_buffer), "%s", sim.gs.spacecraft[i].name);
         addText(font, cursor_pos[0], cursor_pos[1], text_buffer, 0.8f);
@@ -673,10 +673,10 @@ void renderPlanetPaths(sim_properties_t* sim, line_batch_t* line_batch, object_p
     if (sim->wp.draw_planet_path && planet_paths->num_objects > 0 && planet_paths->positions != NULL && planet_paths->counts != NULL) {
         // draw orbital paths for all planets
         for (int p = 0; p < planet_paths->num_objects; p++) {
-            int base = p * planet_paths->capacity;
+            const int base = p * planet_paths->capacity;
             for (int i = 1; i < planet_paths->counts[p]; i++) {
-                vec3 p1 = planet_paths->positions[base + i - 1];
-                vec3 p2 = planet_paths->positions[base + i];
+                const vec3 p1 = planet_paths->positions[base + i - 1];
+                const vec3 p2 = planet_paths->positions[base + i];
                 addLine(line_batch, (float)p1.x, (float)p1.y, (float)p1.z,
                                     (float)p2.x, (float)p2.y, (float)p2.z, 0.5f, 1.0f, 0.5f);
             }
@@ -686,15 +686,15 @@ void renderPlanetPaths(sim_properties_t* sim, line_batch_t* line_batch, object_p
     // record planet paths
     if (sim->wp.frame_counter % 5 == 0 && sim->gb.count > 0 && planet_paths->counts != NULL && planet_paths->positions != NULL) {
         for (int p = 0; p < sim->gb.count; p++) {
-            body_t* body = &sim->gb.bodies[p];
-            int idx = p * planet_paths->capacity + planet_paths->counts[p];
+            const body_t* body = &sim->gb.bodies[p];
+            const int idx = p * planet_paths->capacity + planet_paths->counts[p];
             if (planet_paths->counts[p] < planet_paths->capacity) {
                 planet_paths->positions[idx].x = body->pos.x / SCALE;
                 planet_paths->positions[idx].y = body->pos.y / SCALE;
                 planet_paths->positions[idx].z = body->pos.z / SCALE;
                 planet_paths->counts[p]++;
             } else {
-                int base = p * planet_paths->capacity;
+                const int base = p * planet_paths->capacity;
                 for (int i = 1; i < planet_paths->capacity; i++) {
                     planet_paths->positions[base + i - 1] = planet_paths->positions[base + i];
                 }
@@ -710,10 +710,10 @@ void renderCraftPaths(sim_properties_t* sim, line_batch_t* line_batch, object_pa
     if (sim->wp.draw_craft_path && craft_paths->num_objects > 0) {
         // draw orbital paths for all crafts
         for (int p = 0; p < craft_paths->num_objects; p++) {
-            int base = p * craft_paths->capacity;
+            const int base = p * craft_paths->capacity;
             for (int i = 1; i < craft_paths->counts[p]; i++) {
-                vec3 p1 = craft_paths->positions[base + i - 1];
-                vec3 p2 = craft_paths->positions[base + i];
+                const vec3 p1 = craft_paths->positions[base + i - 1];
+                const vec3 p2 = craft_paths->positions[base + i];
                 addLine(line_batch, (float)p1.x, (float)p1.y, (float)p1.z,
                                     (float)p2.x, (float)p2.y, (float)p2.z, 1.0f, 1.0f, 0.5f);
             }
@@ -733,15 +733,15 @@ void renderCraftPaths(sim_properties_t* sim, line_batch_t* line_batch, object_pa
     // record craft paths
     if (sim->gs.count > 0) {
         for (int p = 0; p < sim->gs.count; p++) {
-            spacecraft_t* craft = &sim->gs.spacecraft[p];
-            int idx = p * craft_paths->capacity + craft_paths->counts[p];
+            const spacecraft_t* craft = &sim->gs.spacecraft[p];
+            const int idx = p * craft_paths->capacity + craft_paths->counts[p];
             if (craft_paths->counts[p] < craft_paths->capacity) {
                 craft_paths->positions[idx].x = craft->pos.x / SCALE;
                 craft_paths->positions[idx].y = craft->pos.y / SCALE;
                 craft_paths->positions[idx].z = craft->pos.z / SCALE;
                 craft_paths->counts[p]++;
             } else {
-                int base = p * craft_paths->capacity;
+                const int base = p * craft_paths->capacity;
                 for (int i = 1; i < craft_paths->capacity; i++) {
                     craft_paths->positions[base + i - 1] = craft_paths->positions[base + i];
                 }
@@ -758,19 +758,19 @@ void renderVisuals(sim_properties_t* sim, line_batch_t* line_batch, object_path_
     if (sim->wp.draw_lines_between_bodies) {
         // draw lines between planets to show distance
         for (int i = 0; i < sim->gb.count; i++) {
-            body_t* body1 = &sim->gb.bodies[i];
-            vec3_f pp1 = { (float)body1->pos.x / SCALE, (float)body1->pos.y / SCALE, (float)body1->pos.z / SCALE };
+            const body_t* body1 = &sim->gb.bodies[i];
+            const vec3_f pp1 = { (float)body1->pos.x / SCALE, (float)body1->pos.y / SCALE, (float)body1->pos.z / SCALE };
             int pp2idx = i + 1;
             if (i + 1 > sim->gb.count - 1) pp2idx = 0;
-            body_t* body2 = &sim->gb.bodies[pp2idx];
-            vec3_f pp2 = { (float)body2->pos.x / SCALE, (float)body2->pos.y / SCALE, (float)body2->pos.z / SCALE };
+            const body_t* body2 = &sim->gb.bodies[pp2idx];
+            const vec3_f pp2 = { (float)body2->pos.x / SCALE, (float)body2->pos.y / SCALE, (float)body2->pos.z / SCALE };
             addLine(line_batch, pp1.x, pp1.y, pp1.z, pp2.x, pp2.y, pp2.z, 1, 1, 1);
         }
     }
     if (sim->wp.draw_inclination_height) {
         for (int i = 0; i < sim->gb.count; i++) {
-            body_t* body = &sim->gb.bodies[i];
-            vec3_f pp = { (float)body->pos.x / SCALE, (float)body->pos.y / SCALE, (float)body->pos.z / SCALE };
+            const body_t* body = &sim->gb.bodies[i];
+            const vec3_f pp = { (float)body->pos.x / SCALE, (float)body->pos.y / SCALE, (float)body->pos.z / SCALE };
             float r, g, b;
             if (pp.z > 0) { r = 0.5f, g = 0.5f; b = 1.0f; }
             else { r = 1.0f, g = 0.5f; b = 0.5f; }
@@ -780,27 +780,27 @@ void renderVisuals(sim_properties_t* sim, line_batch_t* line_batch, object_path_
 
     // draw rotation axes for all bodies
     for (int i = 0; i < sim->gb.count; i++) {
-        body_t* body = &sim->gb.bodies[i];
+        const body_t* body = &sim->gb.bodies[i];
         if (body->rotational_v != 0.0) {
             // get planet position
-            vec3_f planet_pos = {
+            const vec3_f planet_pos = {
                 (float)body->pos.x / SCALE,
                 (float)body->pos.y / SCALE,
                 (float)body->pos.z / SCALE
             };
 
             // extract rotation axis from attitude quaternion
-            vec3 z_axis = {0.0, 0.0, 1.0};
-            vec3 rotation_axis = quaternionRotate(body->attitude, z_axis);
+            const vec3 z_axis = {0.0, 0.0, 1.0};
+            const vec3 rotation_axis = quaternionRotate(body->attitude, z_axis);
 
             // scale the axis to extend beyond the planet
-            float axis_length = (float)body->radius / SCALE * 1.5f;
-            vec3_f axis_end1 = {
+            const float axis_length = (float)body->radius / SCALE * 1.5f;
+            const vec3_f axis_end1 = {
                 planet_pos.x + (float)rotation_axis.x * axis_length,
                 planet_pos.y + (float)rotation_axis.y * axis_length,
                 planet_pos.z + (float)rotation_axis.z * axis_length
             };
-            vec3_f axis_end2 = {
+            const vec3_f axis_end2 = {
                 planet_pos.x - (float)rotation_axis.x * axis_length,
                 planet_pos.y - (float)rotation_axis.y * axis_length,
                 planet_pos.z - (float)rotation_axis.z * axis_length

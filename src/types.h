@@ -120,27 +120,27 @@ typedef struct {
 typedef struct {
     char* name;
 
-    double current_total_mass;
-    double dry_mass;
-    double fuel_mass;
+    double current_total_mass; // kg
+    double dry_mass; // kg
+    double fuel_mass; // kg
 
 
-    vec3 pos;
-    vec3 vel;
+    vec3 pos; // meters
+    vec3 vel; // m/s
     double vel_mag;
-    vec3 acc;
+    vec3 acc; // m/s^2
     vec3 acc_prev;
-    vec3 grav_force;
+    vec3 grav_force; // N
 
-    quaternion_t attitude;
-    double rotational_v;
-    double rotational_a;
+    quaternion_t attitude; // oh jeez
+    double rotational_v; // rad/s
+    double rotational_a; // rad/s^2
     double momentum;
     double moment_of_inertia;
-    double torque;
+    double torque; // N m
 
-    double thrust;
-    double mass_flow_rate;
+    double thrust; // N
+    double mass_flow_rate; // kg/s
     double specific_impulse;
     double throttle;
     double nozzle_gimbal_range;
@@ -153,12 +153,12 @@ typedef struct {
 
     double apoapsis, periapsis;
 
-    double semi_major_axis;
+    double semi_major_axis; // m
     double eccentricity;
-    double inclination;
-    double ascending_node;
-    double arg_periapsis;
-    double true_anomaly;
+    double inclination; // rad
+    double ascending_node; // rad
+    double arg_periapsis; // rad
+    double true_anomaly; // rad
 
     int num_burns;
     burn_properties_t* burn_properties;

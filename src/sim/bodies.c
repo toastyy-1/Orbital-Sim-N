@@ -15,11 +15,11 @@ void body_calculateGravForce(sim_properties_t* sim, const int i, const int j) {
     body_t* bj = &sim->gb.bodies[j];
 
     // calculate the distance between the two bodies
-    vec3 delta_pos = vec3_sub(bj->pos, bi->pos);
-    double r_squared = vec3_mag_sq(delta_pos);
+    const vec3 delta_pos = vec3_sub(bj->pos, bi->pos);
+    const double r_squared = vec3_mag_sq(delta_pos);
 
     // planet collision logic -- checks if planets are too close
-    double radius_squared = bi->radius * bi->radius;
+    const double radius_squared = bi->radius * bi->radius;
     if (r_squared < radius_squared) {
         sim->wp.sim_running = false;
         sim->wp.reset_sim = true;
@@ -30,11 +30,11 @@ void body_calculateGravForce(sim_properties_t* sim, const int i, const int j) {
     }
 
     // force = (G * m1 * m2) * delta / r^3
-    double r = sqrt(r_squared);
-    double r_cubed = r_squared * r;
-    double force_factor = (G * bi->mass * bj->mass) / r_cubed;
+    const double r = sqrt(r_squared);
+    const double r_cubed = r_squared * r;
+    const double force_factor = (G * bi->mass * bj->mass) / r_cubed;
 
-    vec3 force = vec3_scale(delta_pos, force_factor);
+    const vec3 force = vec3_scale(delta_pos, force_factor);
 
     // applies force to both bodies (Newton's third law)
     bi->force = vec3_add(bi->force, force);
@@ -48,12 +48,12 @@ void body_updateMotion(body_t* body, const double dt) {
     body->acc = vec3_scale(body->force, 1.0 / body->mass);
 
     // update position using current velocity and acceleration
-    vec3 vel_term = vec3_scale(body->vel, dt);
-    vec3 acc_term = vec3_scale(body->acc, 0.5 * dt * dt);
+    const vec3 vel_term = vec3_scale(body->vel, dt);
+    const vec3 acc_term = vec3_scale(body->acc, 0.5 * dt * dt);
     body->pos = vec3_add(body->pos, vec3_add(vel_term, acc_term));
 
     // update velocity using average of current and previous acceleration
-    vec3 avg_acc = vec3_scale(vec3_add(body->acc, body->acc_prev), 0.5);
+    const vec3 avg_acc = vec3_scale(vec3_add(body->acc, body->acc_prev), 0.5);
     body->vel = vec3_add(body->vel, vec3_scale(avg_acc, dt));
     body->vel_mag = vec3_mag(body->vel);
 
@@ -71,12 +71,12 @@ void body_calculateKineticEnergy(body_t* body) {
 void body_updateRotation(body_t* body, const double dt) {
     if (body->rotational_v != 0.0) {
         // extract the rotation axis from the current attitude
-        vec3 local_z = {0.0, 0.0, 1.0};
-        vec3 world_spin_axis = quaternionRotate(body->attitude, local_z);
+        const vec3 local_z = {0.0, 0.0, 1.0};
+        const vec3 world_spin_axis = quaternionRotate(body->attitude, local_z);
 
         // create a rotation around this world-space axis
-        double rotation_angle = body->rotational_v * dt;
-        quaternion_t delta_rotation = quaternionFromAxisAngle(world_spin_axis, rotation_angle);
+        const double rotation_angle = body->rotational_v * dt;
+        const quaternion_t delta_rotation = quaternionFromAxisAngle(world_spin_axis, rotation_angle);
 
         // apply rotation in world frame
         body->attitude = quaternionMul(delta_rotation, body->attitude);
@@ -90,7 +90,7 @@ void body_calculateSOI(body_properties_t* gb) {
     if (gb->count < 2) return;  // need at least 2 bodies
 
     body_t* central = &gb->bodies[0];
-    double M = central->mass;
+    const double M = central->mass;
 
     // first body has no SOI
     central->SOI_radius = 0.0;
@@ -99,21 +99,21 @@ void body_calculateSOI(body_properties_t* gb) {
         body_t* body = &gb->bodies[i];
 
         // calculate distance from central body
-        vec3 delta = vec3_sub(body->pos, central->pos);
-        double a = vec3_mag(delta);
+        const vec3 delta = vec3_sub(body->pos, central->pos);
+        const double a = vec3_mag(delta);
 
         // SOI = a * (m/M)^(2/5)
-        double mass_ratio = body->mass / M;
+        const double mass_ratio = body->mass / M;
         body->SOI_radius = a * pow(mass_ratio, 0.4);
     }
 }
 
 // function to add a new body to the system
 void body_addOrbitalBody(body_properties_t* gb, const char* name, const double mass,
-                         const double radius, vec3 pos, vec3 vel) {
+                         const double radius, const vec3 pos, const vec3 vel) {
     // grow capacity if needed (amortized growth)
     if (gb->count >= gb->capacity) {
-        int new_capacity = gb->capacity == 0 ? 4 : gb->capacity * 2;
+        const int new_capacity = gb->capacity == 0 ? 4 : gb->capacity * 2;
         body_t* temp = (body_t*)realloc(gb->bodies, new_capacity * sizeof(body_t));
         if (temp == NULL) {
             displayError("ERROR", "Failed to allocate memory for body");
@@ -123,7 +123,7 @@ void body_addOrbitalBody(body_properties_t* gb, const char* name, const double m
         gb->capacity = new_capacity;
     }
 
-    int idx = gb->count;
+    const int idx = gb->count;
     body_t* body = &gb->bodies[idx];
 
     // allocate and copy name

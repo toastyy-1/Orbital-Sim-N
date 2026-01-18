@@ -16,23 +16,23 @@ double calculateTotalSystemEnergy(const sim_properties_t* sim) {
 
     // calculate kinetic energy for all bodies
     for (int i = 0; i < gb->count; i++) {
-        body_t* body = &gb->bodies[i];
+        const body_t* body = &gb->bodies[i];
         total_kinetic += 0.5 * body->mass * body->vel_mag * body->vel_mag;
     }
 
     // calculate kinetic energy for all spacecraft
     for (int i = 0; i < sc->count; i++) {
-        spacecraft_t* craft = &sc->spacecraft[i];
+        const spacecraft_t* craft = &sc->spacecraft[i];
         total_kinetic += 0.5 * craft->current_total_mass * craft->vel_mag * craft->vel_mag;
     }
 
     // calculate potential energy between all body pairs
     for (int i = 0; i < gb->count; i++) {
         for (int j = i + 1; j < gb->count; j++) {
-            body_t* bi = &gb->bodies[i];
-            body_t* bj = &gb->bodies[j];
-            vec3 delta = vec3_sub(bj->pos, bi->pos);
-            double r = vec3_mag(delta);
+            const body_t* bi = &gb->bodies[i];
+            const body_t* bj = &gb->bodies[j];
+            const vec3 delta = vec3_sub(bj->pos, bi->pos);
+            const double r = vec3_mag(delta);
             if (r > 0) {
                 total_potential += -(G * bi->mass * bj->mass) / r;
             }
@@ -42,10 +42,10 @@ double calculateTotalSystemEnergy(const sim_properties_t* sim) {
     // calculate potential energy between spacecraft and bodies
     for (int i = 0; i < sc->count; i++) {
         for (int j = 0; j < gb->count; j++) {
-            spacecraft_t* craft = &sc->spacecraft[i];
-            body_t* body = &gb->bodies[j];
-            vec3 delta = vec3_sub(body->pos, craft->pos);
-            double r = vec3_mag(delta);
+            const spacecraft_t* craft = &sc->spacecraft[i];
+            const body_t* body = &gb->bodies[j];
+            const vec3 delta = vec3_sub(body->pos, craft->pos);
+            const double r = vec3_mag(delta);
             if (r > 0) {
                 total_potential += -(G * craft->current_total_mass * body->mass) / r;
             }
@@ -90,8 +90,8 @@ void resetSim(sim_properties_t* sim) {
 }
 
 void runCalculations(sim_properties_t* sim) {
-    body_properties_t* gb = &sim->gb;
-    spacecraft_properties_t* sc = &sim->gs;
+    const body_properties_t* gb = &sim->gb;
+    const spacecraft_properties_t* sc = &sim->gs;
     window_params_t* wp = &sim->wp;
 
     if (wp->sim_running) {
@@ -163,8 +163,8 @@ void runCalculations(sim_properties_t* sim) {
 
 // cleanup for main
 void cleanup(sim_properties_t* sim) {
-    body_properties_t* gb = &sim->gb;
-    spacecraft_properties_t* sc = &sim->gs;
+    const body_properties_t* gb = &sim->gb;
+    const spacecraft_properties_t* sc = &sim->gs;
 
     // free all bodies
     if (gb->bodies != NULL) {
