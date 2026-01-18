@@ -39,9 +39,22 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y rpm fakeroot devscripts rpm2cpio
 
-    - name: Build project
+    - name: Build project (Windows)
+      if: matrix.config.os == 'windows-latest'
+      shell: cmd
       run: |
         mkdir build
+        cd build
+        conan profile detect --force
+        conan install .. --build=missing -s build_type=Release -c tools.system.package_manager:mode=install -c tools.system.package_manager:sudo=True
+        cmake .. -DCMAKE_TOOLCHAIN_FILE=generators\conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release
+        cmake --build . --config Release --parallel
+
+    - name: Build project (Unix/macOS)
+      if: matrix.config.os != 'windows-latest'
+      shell: bash
+      run: |
+        mkdir -p build
         cd build
         conan profile detect --force
         conan install .. --build=missing -s build_type=Release -c tools.system.package_manager:mode=install -c tools.system.package_manager:sudo=True
