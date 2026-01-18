@@ -33,6 +33,32 @@ jobs:
     - name: Setup Conan
       uses: conan-io/setup-conan@v1
 
+    - name: Get Conan cache key
+      id: conan-cache-key
+      shell: bash
+      run: |
+        # Create a hash of conanfile.py for cache key
+        CONAN_HASH=$(sha256sum conanfile.py | cut -d' ' -f1)
+        echo "hash=${CONAN_HASH}" >> $GITHUB_OUTPUT
+        
+        # Determine OS-specific cache path
+        if [ "${{ runner.os }}" = "Windows" ]; then
+          echo "path=$HOME/.conan2" >> $GITHUB_OUTPUT
+        elif [ "${{ runner.os }}" = "macOS" ]; then
+          echo "path=$HOME/.conan2" >> $GITHUB_OUTPUT
+        else
+          echo "path=$HOME/.conan2" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Cache Conan packages
+      uses: actions/cache@v4
+      with:
+        path: ${{ steps.conan-cache-key.outputs.path }}
+        key: conan-${{ runner.os }}-${{ runner.arch }}-${{ steps.conan-cache-key.outputs.hash }}
+        restore-keys: |
+          conan-${{ runner.os }}-${{ runner.arch }}-
+          conan-${{ runner.os }}-
+
     - name: Install packaging deps
       if: matrix.config.package
       run: |
@@ -139,4 +165,3 @@ jobs:
           ubuntu-deb/OrbitSimulation-*.deb
           ubuntu-rpm/OrbitSimulation-*.rpm
           windows-x64-msvc/simulation_data.json
-
