@@ -114,7 +114,7 @@ void craft_checkBurnSchedule(spacecraft_t* craft, const body_properties_t* gb, c
                 if (burn->burn_heading != 0.0) {
                     const vec3 rotation_axis = vec3_normalize(rel_vel);
                     const quaternion_t offset_rotation = quaternionFromAxisAngle(rotation_axis, burn->burn_heading);
-                    final_attitude = quaternionMul(offset_rotation, base_rotation);
+                    final_attitude = quaternionMul(base_rotation, offset_rotation);
                 } else {
                     final_attitude = base_rotation;
                 }
@@ -129,7 +129,7 @@ void craft_checkBurnSchedule(spacecraft_t* craft, const body_properties_t* gb, c
                 if (burn->burn_heading != 0.0) {
                     const vec3 rotation_axis = vec3_normalize(normal_direction);
                     const quaternion_t offset_rotation = quaternionFromAxisAngle(rotation_axis, burn->burn_heading);
-                    final_attitude = quaternionMul(offset_rotation, base_rotation);
+                    final_attitude = quaternionMul(base_rotation, offset_rotation);
                 } else {
                     final_attitude = base_rotation;
                 }

@@ -592,7 +592,7 @@ void renderCrafts(const sim_properties_t sim, const GLuint shader_program, const
 
         // create a scale matrix
         const float size_scale_factor = 0.05f;
-        const mat4 S = mat4_scale(size_scale_factor, size_scale_factor * 3, size_scale_factor);
+        const mat4 S = mat4_scale(size_scale_factor, size_scale_factor * 2, size_scale_factor);
         const mat4 R = quaternionToMatrix(craft->attitude);
         const mat4 T = mat4_translation(
             (float)craft->pos.x / SCALE,

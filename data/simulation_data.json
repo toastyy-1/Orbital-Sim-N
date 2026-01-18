@@ -59,7 +59,7 @@
         {
           "burn_target": "Earth",
           "burn_type": "tangent",
-          "start_time": 0.0,
+          "start_time": 2000.0,
           "duration": 300.0,
           "heading": 0.0,
           "throttle": 1.0

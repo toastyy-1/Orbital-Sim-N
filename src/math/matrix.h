@@ -279,6 +279,14 @@ static inline quaternion_t quaternionFromTwoVectors(vec3 from, vec3 to) {
     axis.y = from.z * to.x - from.x * to.z;
     axis.z = from.x * to.y - from.y * to.x;
 
+    // normalize the axis (cross product magnitude is sin(angle), not 1)
+    const double axis_len = sqrt(axis.x * axis.x + axis.y * axis.y + axis.z * axis.z);
+    if (axis_len > 0.0) {
+        axis.x /= axis_len;
+        axis.y /= axis_len;
+        axis.z /= axis_len;
+    }
+
     // quaternion components
     quaternion_t q;
     q.w = sqrt((1.0 + dot) * 0.5);
