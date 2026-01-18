@@ -14,9 +14,9 @@ jobs:
         config:
           - os: windows-latest
             artifact: windows-x64-msvc
-          - os: macos-15
+          - os: macos-15-intel
             artifact: macos-intel
-          - os: macos-15-arm64
+          - os: macos-15
             artifact: macos-arm64
           - os: ubuntu-latest
             artifact: ubuntu-generic
