@@ -859,7 +859,7 @@ void renderVisuals(sim_properties_t sim, line_batch_t* line_batch, object_path_s
     for (int i = 0; i < gs.count; i++) {
         spacecraft_t craft = gs.spacecraft[i];
         const vec3_f craft_pos = scaled_craft_pos[i];
-        const vec3_f body_pos = scaled_body_pos[craft.closest_planet_id];
+        const vec3_f body_pos = scaled_body_pos[craft.SOI_planet_id];
 
         // line from planet to craft!
         addLine(line_batch, craft_pos.x, craft_pos.y, craft_pos.z, body_pos.x, body_pos.y, body_pos.z, 1.0f, 1.0f, 1.0f);
