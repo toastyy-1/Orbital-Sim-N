@@ -211,7 +211,7 @@ int main(int argc, char *argv[]) {
         renderStats(sim_copy, &font);
 
         // renders visuals things if they are enabled
-        renderVisuals(&sim_copy, &line_batch, &planet_paths, &craft_paths);
+        renderVisuals(sim_copy, &line_batch, &planet_paths, &craft_paths);
 
         // command window display
         renderCMDWindow(&sim_copy, &font);

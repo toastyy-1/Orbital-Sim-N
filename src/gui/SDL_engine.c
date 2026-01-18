@@ -49,6 +49,7 @@ window_params_t init_window_params(void) {
     wp.draw_inclination_height = true;
     wp.draw_planet_path = true;
     wp.draw_craft_path = true;
+    wp.draw_planet_SOI = true;
 
     wp.frame_counter = 0;
 

@@ -31,9 +31,9 @@ void craft_calculateOrbitalElements(spacecraft_t* craft, const body_t* body) {
     craft->eccentricity = vec3_mag(e_vec);
 
     const double h_mag = vec3_mag(c_h);
-    craft->inclination = acos(c_h.z / h_mag);
+    craft->inclination = acos(c_h.z / h_mag); // the angle between the orbital and equatorial planes
 
-    // longitude of ascending node
+    // longitude of ascending node -- the angle from the vernal equinox vector to the ascending node on the equatorial plane
     const double n_mag = vec3_mag(c_n);
     if (n_mag > 1e-10) {
         craft->ascending_node = atan2(c_n.y, c_n.x);
@@ -44,7 +44,7 @@ void craft_calculateOrbitalElements(spacecraft_t* craft, const body_t* body) {
         craft->ascending_node = 0.0; // undefined for equatorial orbits (probably unlikely to happen perfectly)
     }
 
-    // argument of periapsis
+    // argument of periapsis -- the angle measured between the ascending node and the perigee
     if (craft->eccentricity > 1e-10 && n_mag > 1e-10) {
         const double cos_omega = vec3_dot(c_n, e_vec) / (n_mag * craft->eccentricity);
         craft->arg_periapsis = acos(fmax(-1.0, fmin(1.0, cos_omega)));
@@ -61,7 +61,7 @@ void craft_calculateOrbitalElements(spacecraft_t* craft, const body_t* body) {
         craft->arg_periapsis = 0.0; // undefined for circular orbits
     }
 
-    // true anomaly
+    // true anomaly -- the angle between perigee and satellite in the orbital plane at a specific time
     if (craft->eccentricity > 1e-10) {
         const double cos_nu = vec3_dot(e_vec, c_pos) / (craft->eccentricity * c_r);
         craft->true_anomaly = acos(fmax(-1.0, fmin(1.0, cos_nu)));
@@ -232,7 +232,7 @@ void craft_consumeFuel(spacecraft_t* craft, const double dt) {
 
         if (fuel_consumed > craft->fuel_mass) {
             fuel_consumed = craft->fuel_mass;
-            craft->engine_on = false;
+            craft->engine_on = false;//
         }
 
         craft->fuel_mass -= fuel_consumed;

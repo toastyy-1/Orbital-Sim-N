@@ -558,6 +558,30 @@ void renderPlanets(const sim_properties_t sim, const GLuint shader_program, cons
         setMatrixUniform(shader_program, "model", &planet_model);
         glDrawArrays(GL_TRIANGLES, 0, sim.wp.planet_model_vertex_count);
     }
+
+    // draw sphere of influence
+    if (sim.wp.draw_planet_SOI) {
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glDepthMask(GL_FALSE);
+        glUniform1i(glGetUniformLocation(shader_program, "useOverride"), 1);
+        glUniform4f(glGetUniformLocation(shader_program, "colorOverride"), 0.0f, 0.5f, 1.0f, 0.1f);
+        glBindVertexArray(planet_shape_buffer.VAO);
+        for (int i = 0; i < sim.gb.count; i++) {
+            const body_t* body = &sim.gb.bodies[i];
+            const float size_scale_factor = (float)body->SOI_radius / SCALE;
+            const mat4 scale_mat = mat4_scale(size_scale_factor, size_scale_factor, size_scale_factor);
+            const mat4 rotation_mat = quaternionToMatrix(body->attitude);
+            const mat4 translate_mat = mat4_translation((float)body->pos.x / SCALE,(float)body->pos.y / SCALE,(float)body->pos.z / SCALE);
+            const mat4 temp = mat4_mul(rotation_mat, scale_mat);
+            mat4 planet_model = mat4_mul(translate_mat, temp);
+            setMatrixUniform(shader_program, "model", &planet_model);
+            glDrawArrays(GL_TRIANGLES, 0, sim.wp.planet_model_vertex_count);
+        }
+        glUniform1i(glGetUniformLocation(shader_program, "useOverride"), 0);
+        glDepthMask(GL_TRUE);
+        glDisable(GL_BLEND);
+    }
 }
 
 // render the sim crafts to the renderer
@@ -707,7 +731,10 @@ void renderPlanetPaths(sim_properties_t* sim, line_batch_t* line_batch, object_p
 }
 
 void renderCraftPaths(sim_properties_t* sim, line_batch_t* line_batch, object_path_storage_t* craft_paths) {
-    if (sim->wp.draw_craft_path && craft_paths->num_objects > 0) {
+    window_params_t wp = sim->wp;
+    spacecraft_properties_t gs = sim->gs;
+
+    if (wp.draw_craft_path && craft_paths->num_objects > 0) {
         // draw orbital paths for all crafts
         for (int p = 0; p < craft_paths->num_objects; p++) {
             const int base = p * craft_paths->capacity;
@@ -721,18 +748,18 @@ void renderCraftPaths(sim_properties_t* sim, line_batch_t* line_batch, object_pa
     }
 
     // initialize or resize craft paths if needed
-    if (sim->gs.count > 0 && craft_paths->num_objects != sim->gs.count) {
+    if (gs.count > 0 && craft_paths->num_objects != gs.count) {
         free(craft_paths->positions);
         free(craft_paths->counts);
-        craft_paths->num_objects = sim->gs.count;
+        craft_paths->num_objects = gs.count;
         craft_paths->capacity = PATH_CAPACITY;
         craft_paths->positions = malloc(craft_paths->num_objects * craft_paths->capacity * sizeof(vec3));
         craft_paths->counts = calloc(craft_paths->num_objects, sizeof(int));
     }
 
     // record craft paths
-    if (sim->gs.count > 0) {
-        for (int p = 0; p < sim->gs.count; p++) {
+    if (gs.count > 0) {
+        for (int p = 0; p < gs.count; p++) {
             const spacecraft_t* craft = &sim->gs.spacecraft[p];
             const int idx = p * craft_paths->capacity + craft_paths->counts[p];
             if (craft_paths->counts[p] < craft_paths->capacity) {
@@ -754,23 +781,39 @@ void renderCraftPaths(sim_properties_t* sim, line_batch_t* line_batch, object_pa
 }
 
 // renders debug features when they are enabled
-void renderVisuals(sim_properties_t* sim, line_batch_t* line_batch, object_path_storage_t* planet_paths, object_path_storage_t* craft_paths) {
-    if (sim->wp.draw_lines_between_bodies) {
+void renderVisuals(sim_properties_t sim, line_batch_t* line_batch, object_path_storage_t* planet_paths, object_path_storage_t* craft_paths) {
+    window_params_t wp = sim.wp;
+    spacecraft_properties_t gs = sim.gs;
+    body_properties_t gb = sim.gb;
+
+    // create temporary arrays for scaled positions (avoids modifying original data)
+    vec3_f scaled_body_pos[gb.count];
+    vec3_f scaled_craft_pos[gs.count];
+
+    for (int i = 0; i < gb.count; i++) {
+        scaled_body_pos[i].x = (float)(gb.bodies[i].pos.x / SCALE);
+        scaled_body_pos[i].y = (float)(gb.bodies[i].pos.y / SCALE);
+        scaled_body_pos[i].z = (float)(gb.bodies[i].pos.z / SCALE);
+    }
+    for (int i = 0; i < gs.count; i++) {
+        scaled_craft_pos[i].x = (float)(gs.spacecraft[i].pos.x / SCALE);
+        scaled_craft_pos[i].y = (float)(gs.spacecraft[i].pos.y / SCALE);
+        scaled_craft_pos[i].z = (float)(gs.spacecraft[i].pos.z / SCALE);
+    }
+
+    if (wp.draw_lines_between_bodies) {
         // draw lines between planets to show distance
-        for (int i = 0; i < sim->gb.count; i++) {
-            const body_t* body1 = &sim->gb.bodies[i];
-            const vec3_f pp1 = { (float)body1->pos.x / SCALE, (float)body1->pos.y / SCALE, (float)body1->pos.z / SCALE };
+        for (int i = 0; i < gb.count; i++) {
+            const vec3_f pp1 = scaled_body_pos[i];
             int pp2idx = i + 1;
-            if (i + 1 > sim->gb.count - 1) pp2idx = 0;
-            const body_t* body2 = &sim->gb.bodies[pp2idx];
-            const vec3_f pp2 = { (float)body2->pos.x / SCALE, (float)body2->pos.y / SCALE, (float)body2->pos.z / SCALE };
+            if (i + 1 > gb.count - 1) pp2idx = 0;
+            const vec3_f pp2 = scaled_body_pos[pp2idx];
             addLine(line_batch, pp1.x, pp1.y, pp1.z, pp2.x, pp2.y, pp2.z, 1, 1, 1);
         }
     }
-    if (sim->wp.draw_inclination_height) {
-        for (int i = 0; i < sim->gb.count; i++) {
-            const body_t* body = &sim->gb.bodies[i];
-            const vec3_f pp = { (float)body->pos.x / SCALE, (float)body->pos.y / SCALE, (float)body->pos.z / SCALE };
+    if (wp.draw_inclination_height) {
+        for (int i = 0; i < gb.count; i++) {
+            const vec3_f pp = scaled_body_pos[i];
             float r, g, b;
             if (pp.z > 0) { r = 0.5f, g = 0.5f; b = 1.0f; }
             else { r = 1.0f, g = 0.5f; b = 0.5f; }
@@ -779,22 +822,18 @@ void renderVisuals(sim_properties_t* sim, line_batch_t* line_batch, object_path_
     }
 
     // draw rotation axes for all bodies
-    for (int i = 0; i < sim->gb.count; i++) {
-        const body_t* body = &sim->gb.bodies[i];
-        if (body->rotational_v != 0.0) {
-            // get planet position
-            const vec3_f planet_pos = {
-                (float)body->pos.x / SCALE,
-                (float)body->pos.y / SCALE,
-                (float)body->pos.z / SCALE
-            };
+    for (int i = 0; i < gb.count; i++) {
+        const body_t body = gb.bodies[i];
+        if (body.rotational_v != 0.0) {
+            // get planet position (already scaled)
+            const vec3_f planet_pos = scaled_body_pos[i];
 
             // extract rotation axis from attitude quaternion
             const vec3 z_axis = {0.0, 0.0, 1.0};
-            const vec3 rotation_axis = quaternionRotate(body->attitude, z_axis);
+            const vec3 rotation_axis = quaternionRotate(body.attitude, z_axis);
 
             // scale the axis to extend beyond the planet
-            const float axis_length = (float)body->radius / SCALE * 1.5f;
+            const float axis_length = (float)(body.radius / SCALE) * 1.5f;
             const vec3_f axis_end1 = {
                 planet_pos.x + (float)rotation_axis.x * axis_length,
                 planet_pos.y + (float)rotation_axis.y * axis_length,
@@ -813,6 +852,23 @@ void renderVisuals(sim_properties_t* sim, line_batch_t* line_batch, object_path_
         }
     }
 
-    renderCraftPaths(sim, line_batch, craft_paths);
-    renderPlanetPaths(sim, line_batch, planet_paths);
+    //////////////////////////////////////////////////
+    // craft orbital visuals
+    //////////////////////////////////////////////////
+    // render orbit property lines
+    for (int i = 0; i < gs.count; i++) {
+        spacecraft_t craft = gs.spacecraft[i];
+        const vec3_f craft_pos = scaled_craft_pos[i];
+        const vec3_f body_pos = scaled_body_pos[craft.closest_planet_id];
+
+        // line from planet to craft!
+        addLine(line_batch, craft_pos.x, craft_pos.y, craft_pos.z, body_pos.x, body_pos.y, body_pos.z, 1.0f, 1.0f, 1.0f);
+        // line to view angle from equatorial plane
+        addLine(line_batch, craft_pos.x, craft_pos.y, body_pos.z, body_pos.x, body_pos.y, body_pos.z, 1.0f, 0.0f, 0.0f);
+        // line to connect the triangle
+        addLine(line_batch, craft_pos.x, craft_pos.y, craft_pos.z, craft_pos.x, craft_pos.y, body_pos.z, 0.0f, 1.0f, 0.0f);
+    }
+
+    renderCraftPaths(&sim, line_batch, craft_paths);
+    renderPlanetPaths(&sim, line_batch, planet_paths);
 }

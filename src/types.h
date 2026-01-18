@@ -61,6 +61,7 @@ typedef struct {
     bool draw_inclination_height;
     bool draw_planet_path;
     bool draw_craft_path;
+    bool draw_planet_SOI;
 
 } window_params_t;
 
